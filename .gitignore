@@ -1,0 +1,36 @@
+# ========================
+# FRONTEND (React / Vite)
+# ========================
+node_modules/
+dist/
+build/
+
+# ========================
+# BACKEND (Spring Boot)
+# ========================
+target/
+*.class
+
+# ========================
+# ENVIRONMENT VARIABLES
+# ========================
+.env
+application.properties
+application-local.properties
+
+# ========================
+# LOG FILES
+# ========================
+*.log
+
+# ========================
+# IDE FILES
+# ========================
+.vscode/
+.idea/
+
+# ========================
+# OS FILES
+# ========================
+.DS_Store
+Thumbs.db
