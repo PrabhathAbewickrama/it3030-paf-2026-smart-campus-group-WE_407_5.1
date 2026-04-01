@@ -1,8 +1,8 @@
-package com.yourpackage.controller;
+package com.it3030-paf-2026-smart-campus-group-WE_407_5.1.controller;
 
-import com.yourpackage.dto.NotificationRequest;
-import com.yourpackage.model.Notification;
-import com.yourpackage.service.NotificationService;
+import com.it3030-paf-2026-smart-campus-group-WE_407_5.1.dto.NotificationRequest;
+import com.it3030-paf-2026-smart-campus-group-WE_407_5.1.model.Notification;
+import com.it3030-paf-2026-smart-campus-group-WE_407_5.1.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
