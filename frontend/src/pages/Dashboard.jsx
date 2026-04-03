@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from '../components/common/Card';
 import { Users, Calendar, Wrench, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
