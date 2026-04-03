@@ -6,7 +6,6 @@ import { cn } from '../../utils/utils';
 export const Sidebar = () => {
     const links = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Tickets', path: '/tickets', icon: Wrench },
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Settings', path: '/settings', icon: Settings },
     ];
