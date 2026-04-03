@@ -1,5 +1,4 @@
-package com.yourpackage.dto;
-
+package com.smart_campus_group.notfications.dto;
 public class NotificationRequest {
 
     private Long userId;

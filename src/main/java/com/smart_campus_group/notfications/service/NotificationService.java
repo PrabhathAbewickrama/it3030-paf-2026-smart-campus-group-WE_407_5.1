@@ -1,8 +1,8 @@
-package com.yourpackage.service;
+package com.smart_campus_group.notfications.service;
 
-import com.yourpackage.dto.NotificationRequest;
-import com.yourpackage.model.Notification;
-import com.yourpackage.repository.NotificationRepository;
+import com.smart_campus_group.notfications.dto.NotificationRequest;
+import com.smart_campus_group.notfications.model.Notification;
+import com.smart_campus_group.notfications.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.yourpackage.model;
+package com.smart_campus_group.notfications.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
