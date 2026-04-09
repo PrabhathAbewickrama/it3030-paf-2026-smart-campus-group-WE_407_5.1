@@ -1,11 +1,13 @@
 package com.sliit.nexus.entity;
 
-import com.sliit.nexus.enums.AuthProvider;
-import com.sliit.nexus.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.sliit.nexus.enums.AuthProvider;
+import com.sliit.nexus.enums.Role;
 
 import java.time.LocalDateTime;
 
