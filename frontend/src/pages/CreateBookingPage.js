@@ -1,10 +1,10 @@
 import React from 'react';
 import BookingForm from '../components/booking/BookingForm';
+import './Pages.css';
 
 const CreateBookingPage = () => {
     return (
-        <div>
-            <h1>Create Booking</h1>
+        <div className="page-wrapper">
             <BookingForm />
         </div>
     );

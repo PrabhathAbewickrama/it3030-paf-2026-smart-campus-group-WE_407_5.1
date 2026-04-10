@@ -1,10 +1,10 @@
 import React from 'react';
 import AdminBookings from '../components/booking/AdminBookings';
+import './Pages.css';
 
 const AdminDashboardPage = () => {
     return (
-        <div>
-            <h1>Admin Dashboard</h1>
+        <div className="page-wrapper">
             <AdminBookings />
         </div>
     );

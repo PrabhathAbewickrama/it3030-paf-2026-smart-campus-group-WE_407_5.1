@@ -1,10 +1,10 @@
 import React from 'react';
 import UserBookings from '../components/booking/UserBookings';
+import './Pages.css';
 
 const MyBookingsPage = () => {
     return (
-        <div>
-            <h1>My Bookings</h1>
+        <div className="page-wrapper">
             <UserBookings />
         </div>
     );

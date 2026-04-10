@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
+import './BookingForm.css';
 
 const BookingForm = () => {
     const [formData, setFormData] = useState({
@@ -48,47 +49,59 @@ const BookingForm = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label>Resource:</label>
-                <select name="resourceType" value={formData.resourceType} onChange={handleChange} required>
-                    <option value="">Select resource</option>
-                    <option value="Lecture Hall">Lecture Hall</option>
-                    <option value="Lab">Lab</option>
-                    <option value="Meeting Room">Meeting Room</option>
-                    <option value="Equipment">Equipment</option>
-                </select>
+        <div className="booking-container">
+            <div className="booking-header">
+                <h1>Create Booking</h1>
+                <p>Request a resource for your event or meeting</p>
             </div>
-            {formData.resourceType === 'Equipment' && (
-                <div>
-                    <label>Equipment Name:</label>
-                    <input
-                        type="text"
-                        name="equipmentName"
-                        value={formData.equipmentName}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-            )}
-            <div>
-                <label>Start Time:</label>
-                <input type="datetime-local" name="startTime" value={formData.startTime} onChange={handleChange} required />
+
+            <div className="form-card">
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>Resource Type: *</label>
+                        <select name="resourceType" value={formData.resourceType} onChange={handleChange} required>
+                            <option value="">Select resource</option>
+                            <option value="Lecture Hall">Lecture Hall</option>
+                            <option value="Lab">Lab</option>
+                            <option value="Meeting Room">Meeting Room</option>
+                            <option value="Equipment">Equipment</option>
+                        </select>
+                    </div>
+                    {formData.resourceType === 'Equipment' && (
+                        <div className="form-group">
+                            <label>Equipment Name: *</label>
+                            <input
+                                type="text"
+                                name="equipmentName"
+                                placeholder="Enter equipment name (e.g., Projector, Laptop)"
+                                value={formData.equipmentName}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                    )}
+                    <div className="form-group">
+                        <label>Start Time: *</label>
+                        <input type="datetime-local" name="startTime" value={formData.startTime} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label>End Time: *</label>
+                        <input type="datetime-local" name="endTime" value={formData.endTime} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label>Purpose: *</label>
+                        <textarea name="purpose" placeholder="Describe the purpose of the booking" rows="3" value={formData.purpose} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label>Expected Attendees:</label>
+                        <input type="number" name="expectedAttendees" placeholder="Number of attendees" min="0" value={formData.expectedAttendees} onChange={handleChange} />
+                    </div>
+                    <div className="form-buttons">
+                        <button type="submit" className="btn btn-primary">Submit Booking</button>
+                    </div>
+                </form>
             </div>
-            <div>
-                <label>End Time:</label>
-                <input type="datetime-local" name="endTime" value={formData.endTime} onChange={handleChange} required />
-            </div>
-            <div>
-                <label>Purpose:</label>
-                <input type="text" name="purpose" value={formData.purpose} onChange={handleChange} required />
-            </div>
-            <div>
-                <label>Expected Attendees:</label>
-                <input type="number" name="expectedAttendees" value={formData.expectedAttendees} onChange={handleChange} />
-            </div>
-            <button type="submit">Submit Booking</button>
-        </form>
+        </div>
     );
 };
 
