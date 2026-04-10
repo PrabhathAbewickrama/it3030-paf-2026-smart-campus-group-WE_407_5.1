@@ -6,7 +6,7 @@ const HomePage = () => {
     return (
         <div className="home-container">
             <div className="home-header">
-                <h1>Smart Campus - Booking Management System</h1>
+                <h1> SLIIT Campus - Booking Management System</h1>
                 <p>Manage facility bookings efficiently</p>
             </div>
 
