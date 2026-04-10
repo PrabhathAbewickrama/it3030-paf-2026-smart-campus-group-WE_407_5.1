@@ -3,6 +3,11 @@
   margin: 0 auto;
   padding: 40px 20px;
   font-family: Arial, sans-serif;
+  min-height: 100vh;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('../assets/background-image.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .home-header {
