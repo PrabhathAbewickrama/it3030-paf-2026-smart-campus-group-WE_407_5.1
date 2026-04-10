@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 
 const AdminBookings = () => {
     const [bookings, setBookings] = useState([]);
@@ -12,7 +12,7 @@ const AdminBookings = () => {
 
     const fetchBookings = async () => {
         try {
-            const response = await axios.get('/api/bookings');
+            const response = await api.get('/api/bookings');
             setBookings(response.data);
         } catch (error) {
             console.error('Error fetching bookings:', error);
@@ -21,11 +21,11 @@ const AdminBookings = () => {
 
     const handleApproveReject = async () => {
         try {
-            await axios.put(`/api/bookings/${selectedBooking.id}/approve`, approval);
+            await api.put(`/api/bookings/${selectedBooking.id}/approve`, approval);
             setSelectedBooking(null);
             fetchBookings();
         } catch (error) {
-            alert('Error: ' + error.response.data);
+            alert('Error: ' + (error.response?.data || error.message));
         }
     };
 

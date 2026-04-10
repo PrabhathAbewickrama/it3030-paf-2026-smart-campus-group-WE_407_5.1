@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 
 const BookingForm = () => {
     const [formData, setFormData] = useState({
-        resource: '',
+        resourceType: '',
+        equipmentName: '',
         startTime: '',
         endTime: '',
         purpose: '',
@@ -16,12 +17,33 @@ const BookingForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const resource = formData.resourceType === 'Equipment'
+            ? `Equipment: ${formData.equipmentName}`
+            : formData.resourceType;
+
+        const payload = {
+            resource,
+            startTime: formData.startTime,
+            endTime: formData.endTime,
+            purpose: formData.purpose,
+            expectedAttendees: formData.expectedAttendees
+        };
+
         try {
-            await axios.post('/api/bookings', formData);
+            await api.post('/api/bookings', payload);
             alert('Booking created successfully');
             // Reset form or redirect
+            setFormData({
+                resourceType: '',
+                equipmentName: '',
+                startTime: '',
+                endTime: '',
+                purpose: '',
+                expectedAttendees: ''
+            });
         } catch (error) {
-            alert('Error creating booking: ' + error.response.data);
+            alert('Error creating booking: ' + (error.response?.data || error.message));
         }
     };
 
@@ -29,8 +51,26 @@ const BookingForm = () => {
         <form onSubmit={handleSubmit}>
             <div>
                 <label>Resource:</label>
-                <input type="text" name="resource" value={formData.resource} onChange={handleChange} required />
+                <select name="resourceType" value={formData.resourceType} onChange={handleChange} required>
+                    <option value="">Select resource</option>
+                    <option value="Lecture Hall">Lecture Hall</option>
+                    <option value="Lab">Lab</option>
+                    <option value="Meeting Room">Meeting Room</option>
+                    <option value="Equipment">Equipment</option>
+                </select>
             </div>
+            {formData.resourceType === 'Equipment' && (
+                <div>
+                    <label>Equipment Name:</label>
+                    <input
+                        type="text"
+                        name="equipmentName"
+                        value={formData.equipmentName}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+            )}
             <div>
                 <label>Start Time:</label>
                 <input type="datetime-local" name="startTime" value={formData.startTime} onChange={handleChange} required />

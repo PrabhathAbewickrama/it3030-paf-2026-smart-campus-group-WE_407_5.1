@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 
 const UserBookings = () => {
     const [bookings, setBookings] = useState([]);
@@ -10,7 +10,7 @@ const UserBookings = () => {
 
     const fetchBookings = async () => {
         try {
-            const response = await axios.get('/api/bookings/my');
+            const response = await api.get('/api/bookings/my');
             setBookings(response.data);
         } catch (error) {
             console.error('Error fetching bookings:', error);
@@ -19,10 +19,10 @@ const UserBookings = () => {
 
     const handleCancel = async (id) => {
         try {
-            await axios.put(`/api/bookings/${id}/cancel`);
+            await api.put(`/api/bookings/${id}/cancel`);
             fetchBookings(); // Refresh list
         } catch (error) {
-            alert('Error cancelling booking: ' + error.response.data);
+            alert('Error cancelling booking: ' + (error.response?.data || error.message));
         }
     };
 
