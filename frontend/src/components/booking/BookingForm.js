@@ -14,7 +14,8 @@ const BookingForm = () => {
     const [errors, setErrors] = useState({
         timeError: '',
         dateError: '',
-        purposeError: ''
+        purposeError: '',
+        attendeeError: ''
     });
 
     const handleChange = (e) => {
@@ -25,6 +26,9 @@ const BookingForm = () => {
         }
         if (e.target.name === 'purpose') {
             setErrors(prev => ({ ...prev, purposeError: '' }));
+        }
+        if (e.target.name === 'expectedAttendees') {
+            setErrors(prev => ({ ...prev, attendeeError: '' }));
         }
     };
 
@@ -55,6 +59,13 @@ const BookingForm = () => {
             hasErrors = true;
         }
 
+        // Validate expected attendees / equipment quantity (1-100)
+        const attendees = Number(formData.expectedAttendees);
+        if (!Number.isInteger(attendees) || attendees < 1 || attendees > 100) {
+            newErrors.attendeeError = 'Expected attendees must be an integer between 1 and 100';
+            hasErrors = true;
+        }
+
         setErrors(newErrors);
 
         if (hasErrors) {
@@ -70,7 +81,7 @@ const BookingForm = () => {
             startTime: formData.startTime,
             endTime: formData.endTime,
             purpose: formData.purpose,
-            expectedAttendees: formData.expectedAttendees
+            expectedAttendees: Number(formData.expectedAttendees)
         };
 
         try {
@@ -85,9 +96,10 @@ const BookingForm = () => {
                 purpose: '',
                 expectedAttendees: ''
             });
-            setErrors({ timeError: '', dateError: '', purposeError: '' });
+            setErrors({ timeError: '', dateError: '', purposeError: '', attendeeError: '' });
         } catch (error) {
-            alert('Error creating booking: ' + (error.response?.data || error.message));
+            const backendMessage = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+            alert('Error creating booking: ' + backendMessage);
         }
     };
 
@@ -144,10 +156,12 @@ const BookingForm = () => {
                             type="number" 
                             name="expectedAttendees" 
                             placeholder={formData.resourceType === 'Equipment' ? 'Quantity needed' : 'Number of attendees'} 
-                            min="0" 
+                            min="1" 
+                            max="100"
                             value={formData.expectedAttendees} 
                             onChange={handleChange} 
                         />
+                        {errors.attendeeError && <div className="field-error">{errors.attendeeError}</div>}
                     </div>
                     <div className="form-buttons">
                         <button type="submit" className="btn btn-primary">Submit Booking</button>
