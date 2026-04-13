@@ -16,5 +16,36 @@ export const createBooking = (data) => api.post(`/bookings/user/1`, data);
 
 // --- TICKETS ---
 export const getTickets = () => api.get('/tickets');
-export const createTicket = (data) => api.post(`/tickets/user/1`, data);
-export const updateTicketStatus = (ticketId, status) => api.patch(`/tickets/${ticketId}/status?status=${status}`);
+export const getTechnicians = () => api.get('/users/technicians');
+export const createTicket = (userId, data) => {
+    const formData = new FormData();
+    formData.append('title', data.title || data.locationOrResource || '');
+    formData.append('category', data.category);
+    formData.append('description', data.description);
+    formData.append('priority', data.priority);
+    formData.append('contactDetails', data.contactDetails);
+    formData.append('locationOrResource', data.locationOrResource);
+
+    if (Array.isArray(data.images)) {
+        data.images.forEach((imageFile) => {
+            formData.append('images', imageFile);
+        });
+    }
+
+    return api.post(`/tickets/user/${userId}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+};
+export const updateTicketStatus = (ticketId, status, note = '') => api.patch(`/tickets/${ticketId}/status`, { status, note });
+export const rejectTicket = (ticketId, reason) => api.patch(`/tickets/${ticketId}/reject`, { reason });
+export const assignTechnician = (ticketId, technicianId) => api.patch(`/tickets/${ticketId}/assign`, { technicianId });
+
+// --- TICKET COMMENTS ---
+export const getTicketComments = (ticketId) => api.get(`/tickets/${ticketId}/comments`);
+export const addTicketComment = (ticketId, userId, comment) => api.post(`/tickets/${ticketId}/comments/user/${userId}`, { comment });
+export const updateTicketComment = (ticketId, commentId, userId, comment) =>
+    api.put(`/tickets/${ticketId}/comments/${commentId}/user/${userId}`, { comment });
+export const deleteTicketComment = (ticketId, commentId, userId) =>
+    api.delete(`/tickets/${ticketId}/comments/${commentId}/user/${userId}`);
