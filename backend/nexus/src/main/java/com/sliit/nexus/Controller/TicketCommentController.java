@@ -1,6 +1,4 @@
-package com.sliit.nexus.Controller;
-
-public package com.sliit.nexus.controller;
+package com.sliit.nexus.controller;
 
 import com.sliit.nexus.dto.request.TicketCommentRequest;
 import com.sliit.nexus.dto.response.TicketCommentResponse;
@@ -53,7 +51,4 @@ public class TicketCommentController {
         ticketCommentService.deleteComment(ticketId, commentId, userId);
         return ResponseEntity.noContent().build();
     }
-}
- {
-    
 }
