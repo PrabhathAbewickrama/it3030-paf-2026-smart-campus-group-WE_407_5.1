@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -109,16 +108,25 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponseDTO> getAllBookings() {
+    public List<BookingResponseDTO> getAllBookings(BookingStatus status, String resource, Long userId) {
         return bookingRepository.findAll().stream()
+                .filter(booking -> status == null || booking.getStatus() == status)
+                .filter(booking -> resource == null || resource.isBlank()
+                        || booking.getResource().toLowerCase().contains(resource.trim().toLowerCase()))
+                .filter(booking -> userId == null || booking.getUserId().equals(userId))
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public BookingResponseDTO getBookingById(Long bookingId) {
+    public BookingResponseDTO getBookingById(Long bookingId, Long requesterUserId, boolean isAdmin) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!isAdmin && !booking.getUserId().equals(requesterUserId)) {
+            throw new IllegalArgumentException("You can only view your own bookings");
+        }
+
         return mapToResponseDTO(booking);
     }
 

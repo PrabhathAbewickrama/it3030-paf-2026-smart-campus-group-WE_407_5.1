@@ -1,6 +1,7 @@
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\security\SecurityConfig.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\dto\booking\BookingApprovalDTO.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\exception\BookingConflictException.java
+C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\security\HeaderAuthenticationFilter.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\exception\ResourceNotFoundException.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\service\impl\BookingServiceImpl.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\dto\booking\BookingResponseDTO.java
@@ -13,3 +14,4 @@ C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\exception\GlobalExceptionHandler.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\entity\Booking.java
 C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\enums\BookingStatus.java
+C:\Users\torrents\Desktop\it3030-paf-2026-smart-campus-group-WE_407_5.1\backend\src\main\java\com\example\smartcampus\security\AuthenticatedUser.java

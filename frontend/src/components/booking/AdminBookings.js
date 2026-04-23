@@ -1,33 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../services/api';
 import './AdminBookings.css';
+
+const initialFilters = {
+    status: '',
+    resource: '',
+    userId: ''
+};
 
 const AdminBookings = () => {
     const [bookings, setBookings] = useState([]);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [approval, setApproval] = useState({ status: 'APPROVED', adminReason: '' });
+    const [filters, setFilters] = useState(initialFilters);
 
-    useEffect(() => {
-        fetchBookings();
-    }, []);
-
-    const fetchBookings = async () => {
+    const fetchBookings = useCallback(async (activeFilters = filters) => {
         try {
-            const response = await api.get('/api/bookings');
+            const response = await api.get('/api/bookings', {
+                params: {
+                    status: activeFilters.status || undefined,
+                    resource: activeFilters.resource.trim() || undefined,
+                    userId: activeFilters.userId || undefined
+                }
+            });
             setBookings(response.data);
         } catch (error) {
             console.error('Error fetching bookings:', error);
         }
-    };
+    }, [filters]);
+
+    useEffect(() => {
+        fetchBookings();
+    }, [fetchBookings]);
 
     const handleApproveReject = async () => {
         try {
             await api.put(`/api/bookings/${selectedBooking.id}/approve`, approval);
             setSelectedBooking(null);
+            setApproval({ status: 'APPROVED', adminReason: '' });
             fetchBookings();
         } catch (error) {
             alert('Error: ' + (error.response?.data || error.message));
         }
+    };
+
+    const handleFilterChange = (event) => {
+        const { name, value } = event.target;
+        setFilters((previous) => ({ ...previous, [name]: value }));
+    };
+
+    const applyFilters = (event) => {
+        event.preventDefault();
+        fetchBookings(filters);
+    };
+
+    const resetFilters = () => {
+        setFilters(initialFilters);
+        fetchBookings(initialFilters);
     };
 
     return (
@@ -37,11 +66,54 @@ const AdminBookings = () => {
                 <p>Review and manage all booking requests</p>
             </div>
 
+            <form className="admin-filters" onSubmit={applyFilters}>
+                <div className="admin-filter-grid">
+                    <div className="admin-filter-group">
+                        <label>Status</label>
+                        <select name="status" value={filters.status} onChange={handleFilterChange}>
+                            <option value="">All statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div className="admin-filter-group">
+                        <label>Resource</label>
+                        <input
+                            type="text"
+                            name="resource"
+                            value={filters.resource}
+                            onChange={handleFilterChange}
+                            placeholder="Filter by resource"
+                        />
+                    </div>
+
+                    <div className="admin-filter-group">
+                        <label>User ID</label>
+                        <input
+                            type="number"
+                            name="userId"
+                            value={filters.userId}
+                            onChange={handleFilterChange}
+                            placeholder="Filter by user id"
+                            min="1"
+                        />
+                    </div>
+                </div>
+
+                <div className="admin-filter-actions">
+                    <button type="submit" className="review-button">Apply Filters</button>
+                    <button type="button" className="btn-cancel-review" onClick={resetFilters}>Reset</button>
+                </div>
+            </form>
+
             <div className="admin-list-container">
                 {bookings.length === 0 ? (
                     <div className="admin-empty">
                         <h3>No bookings</h3>
-                        <p>No bookings to review</p>
+                        <p>No bookings match the current filters</p>
                     </div>
                 ) : (
                     <ul className="admin-list">
@@ -74,9 +146,21 @@ const AdminBookings = () => {
                                             <span className="detail-value">{booking.expectedAttendees}</span>
                                         </div>
                                     )}
+                                    {booking.adminReason && (
+                                        <div className="detail-row">
+                                            <span className="detail-label">Admin Note</span>
+                                            <span className="detail-value">{booking.adminReason}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 {booking.status === 'PENDING' && (
-                                    <button className="review-button" onClick={() => setSelectedBooking(booking)}>
+                                    <button
+                                        className="review-button"
+                                        onClick={() => {
+                                            setSelectedBooking(booking);
+                                            setApproval({ status: 'APPROVED', adminReason: '' });
+                                        }}
+                                    >
                                         Review Request
                                     </button>
                                 )}
@@ -89,7 +173,7 @@ const AdminBookings = () => {
             {selectedBooking && (
                 <div className="review-panel">
                     <h3>Review Booking Request</h3>
-                    
+
                     <div className="review-section">
                         <label>Resource</label>
                         <div className="detail-value">{selectedBooking.resource}</div>
@@ -103,7 +187,6 @@ const AdminBookings = () => {
                     <div className="review-section">
                         <label>Decision: *</label>
                         <select value={approval.status} onChange={(e) => setApproval({ ...approval, status: e.target.value })}>
-                            <option value="">Select action</option>
                             <option value="APPROVED">Approve</option>
                             <option value="REJECTED">Reject</option>
                         </select>
@@ -111,11 +194,11 @@ const AdminBookings = () => {
 
                     <div className="review-section">
                         <label>Comments/Reason:</label>
-                        <textarea 
-                            placeholder="Add comments or reason for rejection" 
+                        <textarea
+                            placeholder="Add comments or reason for rejection"
                             rows="4"
-                            value={approval.adminReason} 
-                            onChange={(e) => setApproval({ ...approval, adminReason: e.target.value })} 
+                            value={approval.adminReason}
+                            onChange={(e) => setApproval({ ...approval, adminReason: e.target.value })}
                         />
                     </div>
 

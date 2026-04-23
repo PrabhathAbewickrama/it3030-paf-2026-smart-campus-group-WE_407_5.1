@@ -32,6 +32,49 @@
   margin-bottom: 30px;
 }
 
+.admin-filters {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.admin-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.admin-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-filter-group label {
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.admin-filter-group input,
+.admin-filter-group select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1em;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.admin-filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .admin-empty {
   padding: 40px 20px;
   text-align: center;

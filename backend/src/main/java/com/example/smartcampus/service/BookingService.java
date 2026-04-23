@@ -3,6 +3,7 @@ package com.example.smartcampus.service;
 import com.example.smartcampus.dto.booking.BookingRequestDTO;
 import com.example.smartcampus.dto.booking.BookingResponseDTO;
 import com.example.smartcampus.dto.booking.BookingApprovalDTO;
+import com.example.smartcampus.enums.BookingStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,9 +18,9 @@ public interface BookingService {
 
     List<BookingResponseDTO> getUserBookings(Long userId);
 
-    List<BookingResponseDTO> getAllBookings();
+    List<BookingResponseDTO> getAllBookings(BookingStatus status, String resource, Long userId);
 
-    BookingResponseDTO getBookingById(Long bookingId);
+    BookingResponseDTO getBookingById(Long bookingId, Long requesterUserId, boolean isAdmin);
     
     /**
      * Check if a time slot is available for a resource
