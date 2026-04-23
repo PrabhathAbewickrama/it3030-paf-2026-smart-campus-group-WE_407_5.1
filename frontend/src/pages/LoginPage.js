@@ -75,10 +75,6 @@ const LoginPage = () => {
           <span>Need an account?</span>
           <Link to="/register">Create one here</Link>
         </div>
-
-        <div className="auth-demo">
-          <strong>Demo accounts:</strong> admin / admin123 and user / user123
-        </div>
       </div>
     </div>
   );

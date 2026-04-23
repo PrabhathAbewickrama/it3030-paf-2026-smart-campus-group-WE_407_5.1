@@ -122,14 +122,6 @@
   text-decoration: none;
 }
 
-.auth-demo {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid #e2e8f0;
-  color: #475569;
-  font-size: 0.95rem;
-}
-
 @media (max-width: 600px) {
   .auth-card {
     padding: 24px;
