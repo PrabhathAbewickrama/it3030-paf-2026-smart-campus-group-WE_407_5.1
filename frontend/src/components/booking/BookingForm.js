@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import './BookingForm.css';
 
 const BookingForm = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         resourceType: '',
         equipmentName: '',
@@ -168,18 +170,7 @@ const BookingForm = () => {
         try {
             await api.post('/api/bookings', payload);
             alert('Booking created successfully');
-            // Reset form
-            setFormData({
-                resourceType: '',
-                equipmentName: '',
-                startTime: '',
-                endTime: '',
-                purpose: '',
-                expectedAttendees: ''
-            });
-            setErrors({ timeError: '', dateError: '', purposeError: '', attendeeError: '', conflictError: '' });
-            setConflictInfo(null);
-            setTimeSlotChecked(false);
+            navigate('/', { replace: true });
         } catch (error) {
             const backendMessage = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             alert('Error creating booking: ' + backendMessage);
