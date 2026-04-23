@@ -10,6 +10,7 @@ build/
 # ========================
 target/
 .gradle
+.m2/
 *.class
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

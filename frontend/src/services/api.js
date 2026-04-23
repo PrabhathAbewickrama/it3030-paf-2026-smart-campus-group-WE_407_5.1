@@ -16,7 +16,9 @@ export const createBooking = (data) => api.post(`/bookings/user/1`, data);
 
 // --- TICKETS ---
 export const getTickets = () => api.get('/tickets');
+export const getUsers = () => api.get('/users');
 export const getTechnicians = () => api.get('/users/technicians');
+export const getUserSummary = () => api.get('/users/summary');
 export const createTicket = (userId, data) => {
     const formData = new FormData();
     formData.append('title', data.title || data.locationOrResource || '');

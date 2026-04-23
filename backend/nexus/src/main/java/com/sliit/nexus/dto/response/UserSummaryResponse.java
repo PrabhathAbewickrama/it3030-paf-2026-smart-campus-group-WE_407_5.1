@@ -5,6 +5,8 @@ import com.sliit.nexus.enums.Role;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 public class UserSummaryResponse {
@@ -12,6 +14,8 @@ public class UserSummaryResponse {
     private String name;
     private String email;
     private Role role;
+    private String avatarUrl;
+    private LocalDateTime createdAt;
 
     public static UserSummaryResponse fromEntity(User user) {
         return UserSummaryResponse.builder()
@@ -19,6 +23,8 @@ public class UserSummaryResponse {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .avatarUrl(user.getAvatarUrl())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Wrench, Settings, Users, Building2 } from 'lucide-react';
+import { LayoutDashboard, Wrench, Settings, Users } from 'lucide-react';
 import { cn } from '../../utils/utils';
 
 export const Sidebar = () => {
     const links = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Tickets', path: '/tickets', icon: Wrench },
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Settings', path: '/settings', icon: Settings },
     ];

@@ -1,18 +1,70 @@
-import React from 'react';
-import { Users, Calendar, Wrench, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Users, Wrench } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-const data = [
-    { name: 'Mon', tickets: 24 },
-    { name: 'Tue', tickets: 13 },
-    { name: 'Wed', tickets: 98 },
-    { name: 'Thu', tickets: 39 },
-    { name: 'Fri', tickets: 48 },
-    { name: 'Sat', tickets: 38 },
-    { name: 'Sun', tickets: 43 },
-];
+import { Card } from '../components/common/Card';
+import { getTickets, getTechnicians, getUserSummary } from '../services/api';
 
 export const Dashboard = () => {
+    const [tickets, setTickets] = useState([]);
+    const [technicians, setTechnicians] = useState([]);
+    const [summary, setSummary] = useState(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [ticketsRes, techniciansRes, summaryRes] = await Promise.all([
+                    getTickets(),
+                    getTechnicians(),
+                    getUserSummary()
+                ]);
+                setTickets(ticketsRes.data);
+                setTechnicians(techniciansRes.data);
+                setSummary(summaryRes.data);
+            } catch (error) {
+                console.error('Failed to load dashboard data', error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const stats = useMemo(() => {
+        const openTickets = tickets.filter((ticket) => ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS');
+        const criticalIssues = tickets.filter((ticket) => ticket.priority === 'HIGH' && ticket.status !== 'CLOSED');
+        const resolvedTickets = tickets.filter((ticket) => ticket.status === 'RESOLVED' || ticket.status === 'CLOSED');
+
+        const byDay = tickets.reduce((acc, ticket) => {
+            const date = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+            const key = date.toLocaleDateString('en-US', { weekday: 'short' });
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
+
+        const orderedDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const trendData = orderedDays.map((day) => ({
+            name: day,
+            tickets: byDay[day] || 0
+        }));
+
+        const recentActivity = [...tickets]
+            .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+            .slice(0, 5)
+            .map((ticket) => ({
+                id: ticket.id,
+                text: `${ticket.category} ticket is ${ticket.status.toLowerCase().replace('_', ' ')}`,
+                time: formatRelative(ticket.updatedAt || ticket.createdAt),
+                priority: ticket.priority
+            }));
+
+        return {
+            openTickets: openTickets.length,
+            criticalIssues: criticalIssues.length,
+            resolvedTickets: resolvedTickets.length,
+            trendData,
+            recentActivity
+        };
+    }, [tickets]);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -20,9 +72,16 @@ export const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <StatCard title="Open Tickets" value="12" icon={Wrench} color="text-accent" />
-                <StatCard title="Critical Issues" value="3" icon={AlertTriangle} color="text-red-500" />
-                <StatCard title="Resolved Today" value="5" icon={Users} color="text-primary" />
+                <StatCard title="Open Tickets" value={stats.openTickets} icon={Wrench} color="text-accent" />
+                <StatCard title="Critical Issues" value={stats.criticalIssues} icon={AlertTriangle} color="text-red-500" />
+                <StatCard title="Resolved Tickets" value={stats.resolvedTickets} icon={CheckCircle2} color="text-emerald-400" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <MiniMetric title="Technicians" value={technicians.length} subtitle="Available support staff" />
+                <MiniMetric title="Admins" value={summary?.admins ?? 0} subtitle="Operations owners" />
+                <MiniMetric title="Managers" value={summary?.managers ?? 0} subtitle="Escalation contacts" />
+                <MiniMetric title="Students" value={summary?.students ?? 0} subtitle="Service requesters" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -30,7 +89,7 @@ export const Dashboard = () => {
                     <h3 className="text-lg font-semibold text-white mb-6">Maintenance Trends</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer>
-                            <AreaChart data={data}>
+                            <AreaChart data={stats.trendData}>
                                 <defs>
                                     <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3} />
@@ -52,10 +111,13 @@ export const Dashboard = () => {
                 <Card>
                     <h3 className="text-lg font-semibold text-white mb-6">Recent Activity</h3>
                     <div className="space-y-6">
-                        <ActivityItem text="Projector maintenance resolved" time="1 hour ago" />
-                        <ActivityItem text="Critical ticket reported: AC failure" time="3 hours ago" />
-                        <ActivityItem text="New technician assigned to Ticket #102" time="5 hours ago" />
-                        <ActivityItem text="Maintenance schedule updated" time="6 hours ago" />
+                        {stats.recentActivity.length > 0 ? (
+                            stats.recentActivity.map((item) => (
+                                <ActivityItem key={item.id} text={item.text} time={item.time} />
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-500">No recent ticket activity yet.</p>
+                        )}
                     </div>
                 </Card>
             </div>
@@ -75,6 +137,14 @@ const StatCard = ({ title, value, icon: Icon, color }) => (
     </Card>
 );
 
+const MiniMetric = ({ title, value, subtitle }) => (
+    <Card className="border border-gray-800/80">
+        <p className="text-sm font-medium text-gray-400">{title}</p>
+        <p className="mt-2 text-3xl font-bold text-white">{value}</p>
+        <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
+    </Card>
+);
+
 const ActivityItem = ({ text, time }) => (
     <div className="flex gap-4 items-start relative before:absolute before:left-[3px] before:top-4 before:bottom-[-24px] before:w-[2px] before:bg-gray-800 last:before:hidden">
         <div className="w-2 h-2 mt-1.5 rounded-full bg-primary relative z-10 shadow-[0_0_8px_rgba(124,58,237,0.8)]" />
@@ -84,3 +154,27 @@ const ActivityItem = ({ text, time }) => (
         </div>
     </div>
 );
+
+const formatRelative = (value) => {
+    if (!value) {
+        return 'Just now';
+    }
+
+    const timestamp = new Date(value).getTime();
+    const diffMinutes = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
+
+    if (diffMinutes < 1) {
+        return 'Just now';
+    }
+    if (diffMinutes < 60) {
+        return `${diffMinutes} min ago`;
+    }
+
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) {
+        return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    }
+
+    const diffDays = Math.round(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+};

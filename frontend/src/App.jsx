@@ -6,6 +6,8 @@ import { SignUp } from './pages/SignUp';
 import { Dashboard } from './pages/Dashboard';
 import { LandingPage } from './pages/LandingPage';
 import { Tickets } from './pages/Tickets';
+import { Users } from './pages/Users';
+import { Settings } from './pages/Settings';
 import { OAuth2RedirectHandler } from './components/auth/OAuth2RedirectHandler';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
@@ -22,8 +24,8 @@ function App() {
                     <Route element={<DashboardLayout />}>
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/tickets" element={<Tickets />} />
-                        <Route path="/users" element={<div className="p-6 text-white text-2xl font-bold">Users Management</div>} />
-                        <Route path="/settings" element={<div className="p-6 text-white text-2xl font-bold">Settings</div>} />
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/settings" element={<Settings />} />
                     </Route>
                 </Route>
 
