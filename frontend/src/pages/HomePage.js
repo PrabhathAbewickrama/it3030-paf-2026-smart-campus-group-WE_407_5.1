@@ -21,7 +21,7 @@ const HomePage = () => {
         </div>
 
         <div className="home-session">
-          <span className="home-role-badge">{currentUser.role === 'admin' ? 'Admin' : 'Normal User'}</span>
+          <span className="home-role-badge">{currentUser.role === 'admin' ? 'Admin' : 'User'}</span>
           <p className="home-welcome">
             Logged in as <strong>{currentUser.username}</strong>
           </p>

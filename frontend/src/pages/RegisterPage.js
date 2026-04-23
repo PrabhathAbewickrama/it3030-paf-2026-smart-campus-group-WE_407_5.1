@@ -50,7 +50,7 @@ const RegisterPage = () => {
       <div className="auth-card">
         <span className="auth-eyebrow">Smart Campus</span>
         <h1>Registration</h1>
-        <p className="auth-subtitle">Create a new account as a normal user or an admin.</p>
+        <p className="auth-subtitle">Create a new account as a user or an admin.</p>
 
         {error && <div className="auth-message error">{error}</div>}
 
@@ -94,7 +94,7 @@ const RegisterPage = () => {
           <label>
             Account Type
             <select name="role" value={formData.role} onChange={handleChange}>
-              <option value="user">Normal User</option>
+              <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </label>
