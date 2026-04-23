@@ -8,19 +8,16 @@ const resourceOptions = {
     Lab: Array.from({ length: 10 }, (_, index) => `Lab ${index + 1}`),
     'Meeting Room': Array.from({ length: 4 }, (_, index) => `Meeting Room ${index + 1}`)
 };
-
-const timeOptions = Array.from({ length: 48 }, (_, index) => {
-    const hours = String(Math.floor(index / 2)).padStart(2, '0');
-    const minutes = index % 2 === 0 ? '00' : '30';
-    return `${hours}:${minutes}`;
-});
-
-const formatTimeLabel = (time) => {
-    const [hourText, minute] = time.split(':');
-    const hour = Number(hourText);
-    const suffix = hour >= 12 ? 'PM' : 'AM';
-    const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;
-    return `${String(normalizedHour).padStart(2, '0')}:${minute} ${suffix}`;
+// Use HTML <input type="time"> with minute precision between 06:00 and 22:00.
+// Helper to compute end-time minimum (startTime + 1 minute).
+const addMinutes = (timeStr, minutesToAdd) => {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    const date = new Date();
+    date.setHours(h, m + minutesToAdd, 0, 0);
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
 };
 
 const BookingForm = () => {
@@ -45,9 +42,8 @@ const BookingForm = () => {
     const [conflictInfo, setConflictInfo] = useState(null);
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const [timeSlotChecked, setTimeSlotChecked] = useState(false);
-    const availableEndTimes = formData.startTime
-        ? timeOptions.filter((time) => time > formData.startTime)
-        : [];
+    // Minimum allowed value for end time (one minute after start time)
+    const endMin = formData.startTime ? addMinutes(formData.startTime, 1) : '06:01';
 
     const buildDateTime = (date, time) => {
         if (!date || !time) {
@@ -288,36 +284,30 @@ const BookingForm = () => {
                     </div>
                     <div className="form-group">
                         <label>Start Time: *</label>
-                        <select
+                        <input
+                            type="time"
                             name="startTime"
                             value={formData.startTime}
                             onChange={handleChange}
                             required
-                        >
-                            <option value="">Select start time</option>
-                            {timeOptions.map((time) => (
-                                <option key={time} value={time}>
-                                    {formatTimeLabel(time)}
-                                </option>
-                            ))}
-                        </select>
+                            min="06:00"
+                            max="21:59"
+                            step="60"
+                        />
                     </div>
                     <div className="form-group">
                         <label>End Time: *</label>
-                        <select
+                        <input
+                            type="time"
                             name="endTime"
                             value={formData.endTime}
                             onChange={handleChange}
                             required
                             disabled={!formData.startTime}
-                        >
-                            <option value="">Select end time</option>
-                            {availableEndTimes.map((time) => (
-                                <option key={time} value={time}>
-                                    {formatTimeLabel(time)}
-                                </option>
-                            ))}
-                        </select>
+                            min={endMin}
+                            max="22:00"
+                            step="60"
+                        />
                         {errors.timeError && <div className="field-error">{errors.timeError}</div>}
                     </div>
 
