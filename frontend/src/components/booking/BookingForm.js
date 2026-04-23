@@ -9,6 +9,20 @@ const resourceOptions = {
     'Meeting Room': Array.from({ length: 4 }, (_, index) => `Meeting Room ${index + 1}`)
 };
 
+const timeOptions = Array.from({ length: 48 }, (_, index) => {
+    const hours = String(Math.floor(index / 2)).padStart(2, '0');
+    const minutes = index % 2 === 0 ? '00' : '30';
+    return `${hours}:${minutes}`;
+});
+
+const formatTimeLabel = (time) => {
+    const [hourText, minute] = time.split(':');
+    const hour = Number(hourText);
+    const suffix = hour >= 12 ? 'PM' : 'AM';
+    const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${String(normalizedHour).padStart(2, '0')}:${minute} ${suffix}`;
+};
+
 const BookingForm = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -31,6 +45,9 @@ const BookingForm = () => {
     const [conflictInfo, setConflictInfo] = useState(null);
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const [timeSlotChecked, setTimeSlotChecked] = useState(false);
+    const availableEndTimes = formData.startTime
+        ? timeOptions.filter((time) => time > formData.startTime)
+        : [];
 
     const buildDateTime = (date, time) => {
         if (!date || !time) {
@@ -46,7 +63,8 @@ const BookingForm = () => {
         setFormData((previous) => ({
             ...previous,
             [name]: value,
-            ...(name === 'resourceType' ? { resourceName: '', equipmentName: '' } : {})
+            ...(name === 'resourceType' ? { resourceName: '', equipmentName: '' } : {}),
+            ...(name === 'startTime' ? { endTime: '' } : {})
         }));
 
         // Clear errors when user changes relevant fields
@@ -270,25 +288,36 @@ const BookingForm = () => {
                     </div>
                     <div className="form-group">
                         <label>Start Time: *</label>
-                        <input
-                            type="time"
+                        <select
                             name="startTime"
                             value={formData.startTime}
                             onChange={handleChange}
                             required
-                            disabled={!formData.startDate}
-                        />
+                        >
+                            <option value="">Select start time</option>
+                            {timeOptions.map((time) => (
+                                <option key={time} value={time}>
+                                    {formatTimeLabel(time)}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="form-group">
                         <label>End Time: *</label>
-                        <input
-                            type="time"
+                        <select
                             name="endTime"
                             value={formData.endTime}
                             onChange={handleChange}
                             required
-                            disabled={!formData.startDate}
-                        />
+                            disabled={!formData.startTime}
+                        >
+                            <option value="">Select end time</option>
+                            {availableEndTimes.map((time) => (
+                                <option key={time} value={time}>
+                                    {formatTimeLabel(time)}
+                                </option>
+                            ))}
+                        </select>
                         {errors.timeError && <div className="field-error">{errors.timeError}</div>}
                     </div>
 
