@@ -3,11 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import './BookingForm.css';
 
+const resourceOptions = {
+    'Lecture Hall': Array.from({ length: 10 }, (_, index) => `Lecture Hall ${index + 1}`),
+    Lab: Array.from({ length: 10 }, (_, index) => `Lab ${index + 1}`),
+    'Meeting Room': Array.from({ length: 4 }, (_, index) => `Meeting Room ${index + 1}`)
+};
+
 const BookingForm = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         resourceType: '',
+        resourceName: '',
         equipmentName: '',
+        startDate: '',
         startTime: '',
         endTime: '',
         purpose: '',
@@ -24,21 +32,36 @@ const BookingForm = () => {
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const [timeSlotChecked, setTimeSlotChecked] = useState(false);
 
+    const buildDateTime = (date, time) => {
+        if (!date || !time) {
+            return '';
+        }
+
+        return `${date}T${time}:00`;
+    };
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        setFormData((previous) => ({
+            ...previous,
+            [name]: value,
+            ...(name === 'resourceType' ? { resourceName: '', equipmentName: '' } : {})
+        }));
+
         // Clear errors when user changes relevant fields
-        if (e.target.name === 'startTime' || e.target.name === 'endTime') {
+        if (name === 'startDate' || name === 'startTime' || name === 'endTime') {
             setErrors(prev => ({ ...prev, timeError: '', dateError: '', conflictError: '' }));
             setConflictInfo(null);
             setTimeSlotChecked(false);
         }
-        if (e.target.name === 'purpose') {
+        if (name === 'purpose') {
             setErrors(prev => ({ ...prev, purposeError: '' }));
         }
-        if (e.target.name === 'expectedAttendees') {
+        if (name === 'expectedAttendees') {
             setErrors(prev => ({ ...prev, attendeeError: '' }));
         }
-        if (e.target.name === 'resourceType' || e.target.name === 'equipmentName') {
+        if (name === 'resourceType' || name === 'resourceName' || name === 'equipmentName') {
             setErrors(prev => ({ ...prev, conflictError: '' }));
             setConflictInfo(null);
             setTimeSlotChecked(false);
@@ -46,6 +69,11 @@ const BookingForm = () => {
     };
 
     const checkTimeSlotAvailability = async () => {
+        if (!formData.startDate) {
+            alert('Please select a start date first');
+            return;
+        }
+
         if (!formData.startTime || !formData.endTime) {
             alert('Please select start and end times first');
             return;
@@ -56,8 +84,21 @@ const BookingForm = () => {
             return;
         }
 
+        if (formData.resourceType !== 'Equipment' && !formData.resourceName) {
+            alert('Please select a specific resource');
+            return;
+        }
+
+        if (formData.resourceType === 'Equipment' && !formData.equipmentName.trim()) {
+            alert('Please enter an equipment name');
+            return;
+        }
+
         const newErrors = { ...errors };
-        if (new Date(formData.startTime) >= new Date(formData.endTime)) {
+        const startDateTime = buildDateTime(formData.startDate, formData.startTime);
+        const endDateTime = buildDateTime(formData.startDate, formData.endTime);
+
+        if (new Date(startDateTime) >= new Date(endDateTime)) {
             newErrors.timeError = 'Start time must be before end time';
             setErrors(newErrors);
             return;
@@ -69,13 +110,13 @@ const BookingForm = () => {
         try {
             const resource = formData.resourceType === 'Equipment'
                 ? `Equipment: ${formData.equipmentName}`
-                : formData.resourceType;
+                : formData.resourceName;
 
             const response = await api.get('/api/bookings/check-availability', {
                 params: {
                     resource,
-                    startTime: formData.startTime,
-                    endTime: formData.endTime
+                    startTime: startDateTime,
+                    endTime: endDateTime
                 }
             });
 
@@ -110,16 +151,16 @@ const BookingForm = () => {
         let hasErrors = false;
 
         // Validate that start time is before end time
-        if (new Date(formData.startTime) >= new Date(formData.endTime)) {
+        const startDateTime = buildDateTime(formData.startDate, formData.startTime);
+        const endDateTime = buildDateTime(formData.startDate, formData.endTime);
+
+        if (new Date(startDateTime) >= new Date(endDateTime)) {
             newErrors.timeError = 'Start time must be before end time';
             hasErrors = true;
         }
 
-        // Validate that start date is before or equal to end date
-        const startDate = new Date(formData.startTime).toDateString();
-        const endDate = new Date(formData.endTime).toDateString();
-        if (startDate > endDate) {
-            newErrors.dateError = 'Start date must be before or equal to end date';
+        if (!formData.startDate) {
+            newErrors.dateError = 'Start date is required';
             hasErrors = true;
         }
 
@@ -157,12 +198,12 @@ const BookingForm = () => {
 
         const resource = formData.resourceType === 'Equipment'
             ? `Equipment: ${formData.equipmentName}`
-            : formData.resourceType;
+            : formData.resourceName;
 
         const payload = {
             resource,
-            startTime: formData.startTime,
-            endTime: formData.endTime,
+            startTime: startDateTime,
+            endTime: endDateTime,
             purpose: formData.purpose,
             expectedAttendees: Number(formData.expectedAttendees)
         };
@@ -196,6 +237,19 @@ const BookingForm = () => {
                             <option value="Equipment">Equipment</option>
                         </select>
                     </div>
+                    {resourceOptions[formData.resourceType] && (
+                        <div className="form-group">
+                            <label>Select {formData.resourceType}: *</label>
+                            <select name="resourceName" value={formData.resourceName} onChange={handleChange} required>
+                                <option value="">Choose {formData.resourceType.toLowerCase()}</option>
+                                {resourceOptions[formData.resourceType].map((option) => (
+                                    <option key={option} value={option}>
+                                        {option}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     {formData.resourceType === 'Equipment' && (
                         <div className="form-group">
                             <label>Equipment Name: *</label>
@@ -210,14 +264,32 @@ const BookingForm = () => {
                         </div>
                     )}
                     <div className="form-group">
+                        <label>Date: *</label>
+                        <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required />
+                        {errors.dateError && <div className="field-error">{errors.dateError}</div>}
+                    </div>
+                    <div className="form-group">
                         <label>Start Time: *</label>
-                        <input type="datetime-local" name="startTime" value={formData.startTime} onChange={handleChange} required />
+                        <input
+                            type="time"
+                            name="startTime"
+                            value={formData.startTime}
+                            onChange={handleChange}
+                            required
+                            disabled={!formData.startDate}
+                        />
                     </div>
                     <div className="form-group">
                         <label>End Time: *</label>
-                        <input type="datetime-local" name="endTime" value={formData.endTime} onChange={handleChange} required />
+                        <input
+                            type="time"
+                            name="endTime"
+                            value={formData.endTime}
+                            onChange={handleChange}
+                            required
+                            disabled={!formData.startDate}
+                        />
                         {errors.timeError && <div className="field-error">{errors.timeError}</div>}
-                        {errors.dateError && <div className="field-error">{errors.dateError}</div>}
                     </div>
 
                     <div className="form-group">
@@ -225,7 +297,14 @@ const BookingForm = () => {
                             type="button"
                             className="btn btn-secondary"
                             onClick={checkTimeSlotAvailability}
-                            disabled={availabilityLoading || !formData.startTime || !formData.endTime || !formData.resourceType}
+                            disabled={
+                                availabilityLoading ||
+                                !formData.startDate ||
+                                !formData.startTime ||
+                                !formData.endTime ||
+                                !formData.resourceType ||
+                                (formData.resourceType === 'Equipment' ? !formData.equipmentName.trim() : !formData.resourceName)
+                            }
                         >
                             {availabilityLoading ? 'Checking availability...' : 'Check Availability'}
                         </button>
