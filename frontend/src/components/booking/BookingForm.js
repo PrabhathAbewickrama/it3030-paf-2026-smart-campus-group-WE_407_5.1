@@ -15,14 +15,20 @@ const BookingForm = () => {
         timeError: '',
         dateError: '',
         purposeError: '',
-        attendeeError: ''
+        attendeeError: '',
+        conflictError: ''
     });
+    const [conflictInfo, setConflictInfo] = useState(null);
+    const [availabilityLoading, setAvailabilityLoading] = useState(false);
+    const [timeSlotChecked, setTimeSlotChecked] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         // Clear errors when user changes relevant fields
         if (e.target.name === 'startTime' || e.target.name === 'endTime') {
-            setErrors(prev => ({ ...prev, timeError: '', dateError: '' }));
+            setErrors(prev => ({ ...prev, timeError: '', dateError: '', conflictError: '' }));
+            setConflictInfo(null);
+            setTimeSlotChecked(false);
         }
         if (e.target.name === 'purpose') {
             setErrors(prev => ({ ...prev, purposeError: '' }));
@@ -30,12 +36,75 @@ const BookingForm = () => {
         if (e.target.name === 'expectedAttendees') {
             setErrors(prev => ({ ...prev, attendeeError: '' }));
         }
+        if (e.target.name === 'resourceType' || e.target.name === 'equipmentName') {
+            setErrors(prev => ({ ...prev, conflictError: '' }));
+            setConflictInfo(null);
+            setTimeSlotChecked(false);
+        }
+    };
+
+    const checkTimeSlotAvailability = async () => {
+        if (!formData.startTime || !formData.endTime) {
+            alert('Please select start and end times first');
+            return;
+        }
+
+        if (!formData.resourceType) {
+            alert('Please select a resource type first');
+            return;
+        }
+
+        const newErrors = { ...errors };
+        if (new Date(formData.startTime) >= new Date(formData.endTime)) {
+            newErrors.timeError = 'Start time must be before end time';
+            setErrors(newErrors);
+            return;
+        }
+
+        setAvailabilityLoading(true);
+        setConflictInfo(null);
+
+        try {
+            const resource = formData.resourceType === 'Equipment'
+                ? `Equipment: ${formData.equipmentName}`
+                : formData.resourceType;
+
+            const response = await api.get('/api/bookings/check-availability', {
+                params: {
+                    resource,
+                    startTime: formData.startTime,
+                    endTime: formData.endTime
+                }
+            });
+
+            if (response.data.available) {
+                setConflictInfo({ available: true, message: 'Time slot is available!' });
+                setErrors(prev => ({ ...prev, conflictError: '' }));
+            } else {
+                setConflictInfo({
+                    available: false,
+                    conflicts: response.data.conflictingBookings,
+                    conflictCount: response.data.conflictCount
+                });
+                setErrors(prev => ({
+                    ...prev,
+                    conflictError: `${response.data.conflictCount} booking(s) already scheduled during this time`
+                }));
+            }
+            setTimeSlotChecked(true);
+        } catch (error) {
+            console.error('Error checking availability:', error);
+            const errorMessage = error.response?.data?.error || error.message;
+            alert('Error checking availability: ' + errorMessage);
+        } finally {
+            setAvailabilityLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const newErrors = { timeError: '', dateError: '', purposeError: '' };
+        const newErrors = { timeError: '', dateError: '', purposeError: '', attendeeError: '', conflictError: '' };
         let hasErrors = false;
 
         // Validate that start time is before end time
@@ -66,6 +135,18 @@ const BookingForm = () => {
             hasErrors = true;
         }
 
+        // Check if time slot availability was verified
+        if (!timeSlotChecked) {
+            newErrors.conflictError = 'Please check availability before submitting the booking';
+            hasErrors = true;
+        }
+
+        // Check if time slot has conflicts
+        if (timeSlotChecked && conflictInfo && !conflictInfo.available) {
+            newErrors.conflictError = `Cannot book: ${conflictInfo.conflictCount} booking(s) already scheduled during this time`;
+            hasErrors = true;
+        }
+
         setErrors(newErrors);
 
         if (hasErrors) {
@@ -87,7 +168,7 @@ const BookingForm = () => {
         try {
             await api.post('/api/bookings', payload);
             alert('Booking created successfully');
-            // Reset form or redirect
+            // Reset form
             setFormData({
                 resourceType: '',
                 equipmentName: '',
@@ -96,7 +177,9 @@ const BookingForm = () => {
                 purpose: '',
                 expectedAttendees: ''
             });
-            setErrors({ timeError: '', dateError: '', purposeError: '', attendeeError: '' });
+            setErrors({ timeError: '', dateError: '', purposeError: '', attendeeError: '', conflictError: '' });
+            setConflictInfo(null);
+            setTimeSlotChecked(false);
         } catch (error) {
             const backendMessage = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             alert('Error creating booking: ' + backendMessage);
@@ -144,6 +227,42 @@ const BookingForm = () => {
                         <input type="datetime-local" name="endTime" value={formData.endTime} onChange={handleChange} required />
                         {errors.timeError && <div className="field-error">{errors.timeError}</div>}
                         {errors.dateError && <div className="field-error">{errors.dateError}</div>}
+                    </div>
+
+                    <div className="form-group">
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={checkTimeSlotAvailability}
+                            disabled={availabilityLoading || !formData.startTime || !formData.endTime || !formData.resourceType}
+                        >
+                            {availabilityLoading ? 'Checking availability...' : 'Check Availability'}
+                        </button>
+                        {timeSlotChecked && conflictInfo && (
+                            <div className={conflictInfo.available ? 'availability-success' : 'availability-warning'}>
+                                <p className="conflict-status">
+                                    {conflictInfo.available
+                                        ? '✓ Time slot is available'
+                                        : `✗ Conflicts found: ${conflictInfo.conflictCount} booking(s)`}
+                                </p>
+                                {!conflictInfo.available && conflictInfo.conflicts && conflictInfo.conflicts.length > 0 && (
+                                    <div className="conflicts-list">
+                                        <strong>Conflicting Bookings:</strong>
+                                        <ul>
+                                            {conflictInfo.conflicts.map((booking, index) => (
+                                                <li key={index}>
+                                                    <span className="booking-purpose">{booking.purpose}</span>
+                                                    <span className="booking-time">
+                                                        {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {errors.conflictError && <div className="field-error">{errors.conflictError}</div>}
                     </div>
                     <div className="form-group">
                         <label>Purpose: *</label>

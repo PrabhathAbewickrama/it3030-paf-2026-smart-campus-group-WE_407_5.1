@@ -6,11 +6,15 @@ import com.example.smartcampus.dto.booking.BookingApprovalDTO;
 import com.example.smartcampus.entity.Booking;
 import com.example.smartcampus.enums.BookingStatus;
 import com.example.smartcampus.exception.ResourceNotFoundException;
+import com.example.smartcampus.exception.BookingConflictException;
 import com.example.smartcampus.repository.BookingRepository;
 import com.example.smartcampus.service.BookingService;
+import com.example.smartcampus.util.ConflictChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,11 +26,21 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponseDTO createBooking(Long userId, BookingRequestDTO request) {
+        // Validate input
+        if (request.getResource() == null || request.getResource().trim().isEmpty()) {
+            throw new IllegalArgumentException("Resource is required");
+        }
+        
+        ConflictChecker.validateBookingTimes(request.getStartTime(), request.getEndTime());
+
         // Check for conflicts
-        List<Booking> conflicts = bookingRepository.findConflictingBookings(
+        List<Booking> conflicts = bookingRepository.findActiveConflicts(
                 request.getResource(), request.getStartTime(), request.getEndTime());
         if (!conflicts.isEmpty()) {
-            throw new IllegalArgumentException("Booking conflict detected for the selected resource and time.");
+            throw new BookingConflictException(
+                    "Booking conflict detected for resource '" + request.getResource() + 
+                    "' during the requested time period. Found " + conflicts.size() + " conflicting booking(s).",
+                    request.getResource());
         }
 
         Booking booking = new Booking();
@@ -49,6 +63,23 @@ public class BookingServiceImpl implements BookingService {
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new IllegalArgumentException("Booking is not in PENDING status");
         }
+        
+        // If approving, check for conflicts again to ensure no other approved bookings conflict
+        if (approval.getStatus() == BookingStatus.APPROVED) {
+            List<Booking> approvedConflicts = bookingRepository.findActiveConflicts(
+                    booking.getResource(), booking.getStartTime(), booking.getEndTime());
+            
+            // Remove the current booking from conflict list if it exists
+            approvedConflicts.removeIf(b -> b.getId().equals(bookingId));
+            
+            if (!approvedConflicts.isEmpty()) {
+                throw new BookingConflictException(
+                        "Cannot approve booking: Conflict detected with " + approvedConflicts.size() + 
+                        " other booking(s) for resource '" + booking.getResource() + "'.",
+                        booking.getResource());
+            }
+        }
+        
         booking.setStatus(approval.getStatus());
         booking.setAdminReason(approval.getAdminReason());
         Booking saved = bookingRepository.save(booking);
@@ -104,5 +135,19 @@ public class BookingServiceImpl implements BookingService {
         dto.setAdminReason(booking.getAdminReason());
         dto.setCreatedAt(booking.getCreatedAt());
         return dto;
+    }
+
+    @Override
+    public boolean isTimeSlotAvailable(String resource, LocalDateTime startTime, LocalDateTime endTime) {
+        List<Booking> conflicts = bookingRepository.findActiveConflicts(resource, startTime, endTime);
+        return conflicts.isEmpty();
+    }
+
+    @Override
+    public List<BookingResponseDTO> getConflictingBookings(String resource, LocalDateTime startTime, LocalDateTime endTime) {
+        List<Booking> conflicts = bookingRepository.findActiveConflicts(resource, startTime, endTime);
+        return conflicts.stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
     }
 }

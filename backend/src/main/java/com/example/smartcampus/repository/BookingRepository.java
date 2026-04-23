@@ -17,9 +17,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByStatus(BookingStatus status);
 
-    @Query("SELECT b FROM Booking b WHERE b.resource = :resource AND b.status IN ('PENDING', 'APPROVED') AND " +
-           "((b.startTime < :endTime AND b.endTime > :startTime))")
+    @Query("SELECT b FROM Booking b WHERE b.resource = :resource AND " +
+           "b.status IN (:statuses) AND " +
+           "(b.startTime < :endTime AND b.endTime > :startTime)")
     List<Booking> findConflictingBookings(@Param("resource") String resource,
                                           @Param("startTime") LocalDateTime startTime,
-                                          @Param("endTime") LocalDateTime endTime);
+                                          @Param("endTime") LocalDateTime endTime,
+                                          @Param("statuses") List<BookingStatus> statuses);
+
+    @Query("SELECT b FROM Booking b WHERE b.resource = :resource AND " +
+           "b.status != 'REJECTED' AND b.status != 'CANCELLED' AND " +
+           "(b.startTime < :endTime AND b.endTime > :startTime)")
+    List<Booking> findActiveConflicts(@Param("resource") String resource,
+                                     @Param("startTime") LocalDateTime startTime,
+                                     @Param("endTime") LocalDateTime endTime);
 }

@@ -4,6 +4,7 @@ import com.example.smartcampus.dto.booking.BookingRequestDTO;
 import com.example.smartcampus.dto.booking.BookingResponseDTO;
 import com.example.smartcampus.dto.booking.BookingApprovalDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingService {
@@ -19,4 +20,22 @@ public interface BookingService {
     List<BookingResponseDTO> getAllBookings();
 
     BookingResponseDTO getBookingById(Long bookingId);
+    
+    /**
+     * Check if a time slot is available for a resource
+     * @param resource The resource to check
+     * @param startTime Start time of the requested slot
+     * @param endTime End time of the requested slot
+     * @return true if the slot is available, false if there are conflicts
+     */
+    boolean isTimeSlotAvailable(String resource, LocalDateTime startTime, LocalDateTime endTime);
+    
+    /**
+     * Get list of bookings that conflict with the given time slot
+     * @param resource The resource to check
+     * @param startTime Start time of the requested slot
+     * @param endTime End time of the requested slot
+     * @return List of conflicting bookings
+     */
+    List<BookingResponseDTO> getConflictingBookings(String resource, LocalDateTime startTime, LocalDateTime endTime);
 }
