@@ -9,16 +9,6 @@ const resourceOptions = {
     'Meeting Room': Array.from({ length: 4 }, (_, index) => `Meeting Room ${index + 1}`)
 };
 // Use HTML <input type="time"> with minute precision between 06:00 and 22:00.
-// Helper to compute end-time minimum (startTime + 1 minute).
-const addMinutes = (timeStr, minutesToAdd) => {
-    if (!timeStr) return '';
-    const [h, m] = timeStr.split(':').map(Number);
-    const date = new Date();
-    date.setHours(h, m + minutesToAdd, 0, 0);
-    const hh = String(date.getHours()).padStart(2, '0');
-    const mm = String(date.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
-};
 
 const BookingForm = () => {
     const navigate = useNavigate();
@@ -42,8 +32,8 @@ const BookingForm = () => {
     const [conflictInfo, setConflictInfo] = useState(null);
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const [timeSlotChecked, setTimeSlotChecked] = useState(false);
-    // Minimum allowed value for end time (one minute after start time)
-    const endMin = formData.startTime ? addMinutes(formData.startTime, 1) : '06:01';
+    // Keep end picker's min aligned with start picker to preserve the same UI
+    const endMin = '06:00';
 
     const buildDateTime = (date, time) => {
         if (!date || !time) {
@@ -56,12 +46,25 @@ const BookingForm = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        setFormData((previous) => ({
-            ...previous,
-            [name]: value,
-            ...(name === 'resourceType' ? { resourceName: '', equipmentName: '' } : {}),
-            ...(name === 'startTime' ? { endTime: '' } : {})
-        }));
+        setFormData((previous) => {
+            const updated = {
+                ...previous,
+                [name]: value,
+                ...(name === 'resourceType' ? { resourceName: '', equipmentName: '' } : {})
+            };
+
+            // If startTime changes, only clear endTime when it's not after the new start
+            if (name === 'startTime') {
+                if (previous.endTime && previous.endTime > value) {
+                    // keep previous endTime since it's still after the new start
+                    updated.endTime = previous.endTime;
+                } else {
+                    updated.endTime = '';
+                }
+            }
+
+            return updated;
+        });
 
         // Clear errors when user changes relevant fields
         if (name === 'startDate' || name === 'startTime' || name === 'endTime') {
@@ -303,7 +306,6 @@ const BookingForm = () => {
                             value={formData.endTime}
                             onChange={handleChange}
                             required
-                            disabled={!formData.startTime}
                             min={endMin}
                             max="22:00"
                             step="60"
