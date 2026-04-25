@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/common/Button';
-import { ArrowRight, Building2, CalendarCheck, ShieldCheck, Wrench } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Wrench } from 'lucide-react';
 
 export const LandingPage = () => {
     const navigate = useNavigate();
