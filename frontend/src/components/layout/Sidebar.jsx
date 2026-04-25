@@ -1,15 +1,28 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarRange, LayoutDashboard, Settings, Users, Wrench } from 'lucide-react';
+import { CalendarRange, LayoutDashboard, Settings, Users, Wrench, Package } from 'lucide-react';
 import { cn } from '../../utils/utils';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export const Sidebar = () => {
+    const { user } = useAuth();
+    const role = user?.role?.replace('ROLE_', '') || 'USER';
+
     const links = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Bookings', path: '/bookings', icon: CalendarRange },
-        { name: 'Tickets', path: '/tickets', icon: Wrench },
-        { name: 'Users', path: '/users', icon: Users },
-        { name: 'Settings', path: '/settings', icon: Settings },
+        ...(role === 'USER' ? [
+            { name: 'Bookings', path: '/bookings', icon: CalendarRange },
+            { name: 'Tickets', path: '/tickets', icon: Wrench },
+        ] : []),
+        ...(role === 'TECHNICIAN' ? [
+            { name: 'Tickets', path: '/tickets', icon: Wrench },
+        ] : []),
+        ...(role === 'ADMIN' ? [
+            { name: 'Tickets', path: '/tickets', icon: Wrench },
+            { name: 'Assets', path: '/assets', icon: Package },
+            { name: 'Users', path: '/users', icon: Users },
+            { name: 'Settings', path: '/settings', icon: Settings },
+        ] : []),
     ];
 
     return (

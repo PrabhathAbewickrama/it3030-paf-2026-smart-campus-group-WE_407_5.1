@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useNotifications } from '../../context/NotificationContext.jsx';
 import './UserBookings.css';
 
 const UserBookings = () => {
     const [bookings, setBookings] = useState([]);
+    const { addNotification } = useNotifications();
 
     useEffect(() => {
         fetchBookings();
@@ -21,9 +23,21 @@ const UserBookings = () => {
     const handleCancel = async (id) => {
         try {
             await api.put(`/api/bookings/${id}/cancel`);
+            addNotification({
+                title: 'Booking cancelled',
+                message: `Booking #${id} has been cancelled and the schedule has been updated.`,
+                type: 'warning',
+                module: 'bookings',
+                roleScope: ['USER', 'ADMIN', 'MANAGER']
+            });
             fetchBookings(); // Refresh list
         } catch (error) {
-            alert('Error cancelling booking: ' + (error.response?.data || error.message));
+            addNotification({
+                title: 'Booking cancellation failed',
+                message: String(error.response?.data || error.message),
+                type: 'error',
+                module: 'bookings'
+            });
         }
     };
 

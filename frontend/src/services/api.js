@@ -49,15 +49,11 @@ export const createTicket = (userId, data) => {
     formData.append('priority', data.priority);
     formData.append('contactDetails', data.contactDetails);
     formData.append('locationOrResource', data.locationOrResource);
-    
-    if (data.resourceId) {
-        formData.append('resourceId', data.resourceId);
-    }
 
     // Add image files
     if (data.images && Array.isArray(data.images)) {
-        data.images.forEach((file, index) => {
-            formData.append(`files`, file);
+        data.images.forEach((file) => {
+            formData.append('images', file);
         });
     }
 
@@ -123,6 +119,10 @@ export const getUserSummary = () => {
     return api.get('/api/users/summary');
 };
 
+export const registerUser = (payload) => {
+    return api.post('/api/auth/register', payload);
+};
+
 // ==================== TICKET COMMENTS API FUNCTIONS ====================
 
 /**
@@ -166,4 +166,90 @@ export const updateTicketComment = (ticketId, commentId, userId, comment) => {
  */
 export const deleteTicketComment = (ticketId, commentId, userId) => {
     return api.delete(`/api/tickets/${ticketId}/comments/${commentId}/user/${userId}`);
+};
+
+// ==================== ASSETS API FUNCTIONS ====================
+
+/**
+ * Get all assets
+ */
+export const getAssets = () => {
+    return api.get('/api/assets');
+};
+
+/**
+ * Get a single asset by ID
+ * @param {number} assetId - The asset ID
+ */
+export const getAssetById = (assetId) => {
+    return api.get(`/api/assets/${assetId}`);
+};
+
+/**
+ * Create a new asset
+ * @param {object} data - Asset data
+ */
+export const createAsset = (data) => {
+    return api.post('/api/assets', data);
+};
+
+/**
+ * Update an asset
+ * @param {number} assetId - The asset ID
+ * @param {object} data - Updated asset data
+ */
+export const updateAsset = (assetId, data) => {
+    return api.put(`/api/assets/${assetId}`, data);
+};
+
+/**
+ * Update asset status
+ * @param {number} assetId - The asset ID
+ * @param {string} status - The new status
+ */
+export const updateAssetStatus = (assetId, status) => {
+    return api.patch(`/api/assets/${assetId}/status`, { status });
+};
+
+/**
+ * Delete an asset
+ * @param {number} assetId - The asset ID
+ */
+export const deleteAsset = (assetId) => {
+    return api.delete(`/api/assets/${assetId}`);
+};
+
+// ==================== BOOKING API FUNCTIONS ====================
+
+/**
+ * Get all bookings
+ */
+export const getBookings = () => {
+    return api.get('/api/bookings');
+};
+
+/**
+ * Create a new booking
+ * @param {object} data - Booking data
+ */
+export const createBooking = (data) => {
+    return api.post('/api/bookings', data);
+};
+
+/**
+ * Update a booking
+ * @param {number} bookingId - The booking ID
+ * @param {object} data - Updated booking data
+ */
+export const updateBooking = (bookingId, data) => {
+    return api.put(`/api/bookings/${bookingId}`, data);
+};
+
+/**
+ * Approve or reject a booking
+ * @param {number} bookingId - The booking ID
+ * @param {object} data - Approval/rejection data
+ */
+export const approveBooking = (bookingId, data) => {
+    return api.put(`/api/bookings/${bookingId}/approve`, data);
 };

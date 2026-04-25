@@ -5,6 +5,7 @@ import { Plus, X } from 'lucide-react';
 import { Badge } from '../components/common/Badge';
 import { Input } from '../components/common/Input';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotifications } from '../context/NotificationContext.jsx';
 import { TicketOverview } from '../components/tickets/TicketOverview';
 import {
     getTickets,
@@ -18,12 +19,18 @@ import {
     addTicketComment,
     updateTicketComment,
     deleteTicketComment,
-    getUserSummary
+    getUserSummary,
+    registerUser
 } from '../services/api';
 
 export const Tickets = () => {
-    const { user } = useAuth();
+    const { user, loginWithProfile } = useAuth();
+    const { addNotification } = useNotifications();
     const currentUserId = user?.id || 1;
+    const currentRole = user?.role?.replace('ROLE_', '') || 'USER';
+    const isStudentView = currentRole === 'USER';
+    const isAdminView = currentRole === 'ADMIN';
+    const isTechnicianView = currentRole === 'TECHNICIAN';
     const [tickets, setTickets] = useState([]);
     const [technicians, setTechnicians] = useState([]);
     const [summary, setSummary] = useState(null);
@@ -44,6 +51,79 @@ export const Tickets = () => {
         locationOrResource: '',
         resourceId: ''
     });
+    const REGISTERED_USERS_KEY = 'smartcampus_registered_users';
+
+    const syncCurrentUserToBackend = async () => {
+        const normalizedEmail = (user?.email || user?.username || '').trim().toLowerCase();
+        const registeredUsers = JSON.parse(localStorage.getItem(REGISTERED_USERS_KEY) || '[]');
+        const matchedAccount = registeredUsers.find(
+            (account) =>
+                account.email === normalizedEmail &&
+                account.role === currentRole
+        );
+
+        if (!matchedAccount?.password || !normalizedEmail) {
+            throw new Error('Your account needs to be created again. Please sign up or log in again.');
+        }
+
+        const response = await registerUser({
+            name: user?.name || matchedAccount.name || 'User',
+            email: normalizedEmail,
+            password: matchedAccount.password,
+            role: currentRole
+        });
+
+        const syncedUser = {
+            id: response.data.id,
+            name: response.data.name,
+            username: response.data.email,
+            email: response.data.email,
+            role: response.data.role
+        };
+
+        loginWithProfile(syncedUser);
+
+        const nextRegisteredUsers = registeredUsers.map((account) =>
+            account.email === normalizedEmail && account.role === currentRole
+                ? { ...account, id: response.data.id }
+                : account
+        );
+        localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(nextRegisteredUsers));
+
+        return response.data.id;
+    };
+
+    const syncRegisteredTechniciansToBackend = async () => {
+        const registeredUsers = JSON.parse(localStorage.getItem(REGISTERED_USERS_KEY) || '[]');
+        const technicianAccounts = registeredUsers.filter(
+            (account) => account.role === 'TECHNICIAN' && account.email && account.password
+        );
+
+        if (technicianAccounts.length === 0) {
+            return [];
+        }
+
+        await Promise.all(
+            technicianAccounts.map(async (account) => {
+                try {
+                    await registerUser({
+                        name: account.name || 'Technician',
+                        email: account.email,
+                        password: account.password,
+                        role: 'TECHNICIAN'
+                    });
+                } catch (error) {
+                    if (error.response?.status !== 409) {
+                        throw error;
+                    }
+                }
+            })
+        );
+
+        const resTech = await getTechnicians();
+        setTechnicians(resTech.data);
+        return resTech.data;
+    };
 
     const fetchData = async () => {
         let ticketsData = [];
@@ -60,6 +140,10 @@ export const Tickets = () => {
         try {
             const resTech = await getTechnicians();
             setTechnicians(resTech.data);
+
+            if (isAdminView && resTech.data.length === 0) {
+                await syncRegisteredTechniciansToBackend();
+            }
         } catch (e) {
             console.error('Failed to load technicians', e);
             setTechnicians([]);
@@ -106,6 +190,13 @@ export const Tickets = () => {
                 ...formData,
                 images: selectedImages
             });
+            addNotification({
+                title: 'Ticket created',
+                message: `${formData.category} issue reported for ${formData.locationOrResource}. Support teams have been notified.`,
+                type: 'success',
+                module: 'tickets',
+                roleScope: ['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']
+            });
             fetchData();
             setShowForm(false);
             setSelectedImages([]);
@@ -118,14 +209,66 @@ export const Tickets = () => {
                 resourceId: ''
             });
         } catch (e) {
-            alert('Error creating ticket.');
+            const backendMessage =
+                e.response?.data?.message ||
+                e.response?.data?.error ||
+                'The issue could not be submitted. Please try again.';
+
+            if (backendMessage === 'User not found') {
+                try {
+                    const syncedUserId = await syncCurrentUserToBackend();
+                    await createTicket(syncedUserId, {
+                        ...formData,
+                        images: selectedImages
+                    });
+                    addNotification({
+                        title: 'Ticket created',
+                        message: `${formData.category} issue reported for ${formData.locationOrResource}. Support teams have been notified.`,
+                        type: 'success',
+                        module: 'tickets',
+                        roleScope: ['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']
+                    });
+                    fetchData();
+                    setShowForm(false);
+                    setSelectedImages([]);
+                    setFormData({
+                        category: '',
+                        description: '',
+                        priority: 'LOW',
+                        contactDetails: '',
+                        locationOrResource: '',
+                        resourceId: ''
+                    });
+                    return;
+                } catch (syncError) {
+                    addNotification({
+                        title: 'Ticket creation failed',
+                        message: syncError.response?.data?.message || syncError.message || 'Your account could not be synchronized.',
+                        type: 'error',
+                        module: 'tickets'
+                    });
+                    return;
+                }
+            }
+
+            addNotification({
+                title: 'Ticket creation failed',
+                message: backendMessage,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
     const handleImageSelection = (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 3) {
-            alert('You can upload up to 3 image evidence files.');
+            addNotification({
+                title: 'Too many images selected',
+                message: 'You can upload up to 3 image evidence files per ticket.',
+                type: 'warning',
+                module: 'tickets'
+            });
             e.target.value = '';
             return;
         }
@@ -137,9 +280,21 @@ export const Tickets = () => {
         try {
             await updateTicketStatus(id, status, note);
             setStatusNoteByTicket({ ...statusNoteByTicket, [id]: '' });
+            addNotification({
+                title: `Ticket moved to ${status}`,
+                message: `Ticket #${id} status was updated${note ? ` with note: ${note}` : '.'}`,
+                type: status === 'CLOSED' || status === 'RESOLVED' ? 'success' : 'info',
+                module: 'tickets',
+                roleScope: ['TECHNICIAN', 'MANAGER', 'ADMIN', 'USER']
+            });
             fetchData();
         } catch (e) {
-            alert('Error updating ticket status.');
+            addNotification({
+                title: 'Ticket status update failed',
+                message: `Ticket #${id} could not be updated.`,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
@@ -151,24 +306,54 @@ export const Tickets = () => {
 
         try {
             await rejectTicket(id, reason);
+            addNotification({
+                title: 'Ticket rejected',
+                message: `Ticket #${id} was rejected${reason ? `: ${reason}` : '.'}`,
+                type: 'warning',
+                module: 'tickets',
+                roleScope: ['USER', 'MANAGER', 'ADMIN']
+            });
             fetchData();
         } catch (e) {
-            alert('Error rejecting ticket.');
+            addNotification({
+                title: 'Ticket rejection failed',
+                message: `Ticket #${id} could not be rejected.`,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
     const handleAssignTechnician = async (ticketId) => {
         const selectedTechId = assigneeByTicket[ticketId];
         if (!selectedTechId) {
-            alert('Please select a technician first.');
+            addNotification({
+                title: 'Technician required',
+                message: 'Please select a technician before assigning the ticket.',
+                type: 'warning',
+                module: 'tickets'
+            });
             return;
         }
 
         try {
             await assignTechnician(ticketId, Number(selectedTechId));
+            const technician = technicians.find((tech) => String(tech.id) === String(selectedTechId));
+            addNotification({
+                title: 'Technician assigned',
+                message: `${technician?.name || 'A technician'} was assigned to ticket #${ticketId}.`,
+                type: 'success',
+                module: 'tickets',
+                roleScope: ['TECHNICIAN', 'ADMIN', 'MANAGER']
+            });
             fetchData();
         } catch (e) {
-            alert('Error assigning technician.');
+            addNotification({
+                title: 'Technician assignment failed',
+                message: `Ticket #${ticketId} could not be assigned.`,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
@@ -180,9 +365,21 @@ export const Tickets = () => {
         try {
             await addTicketComment(ticketId, currentUserId, text);
             setNewCommentByTicket({ ...newCommentByTicket, [ticketId]: '' });
+            addNotification({
+                title: 'Comment added',
+                message: `A new comment was posted on ticket #${ticketId}.`,
+                type: 'info',
+                module: 'tickets',
+                roleScope: ['USER', 'TECHNICIAN', 'MANAGER', 'ADMIN']
+            });
             fetchData();
         } catch (e) {
-            alert('Error adding comment.');
+            addNotification({
+                title: 'Comment failed',
+                message: `Your comment could not be saved for ticket #${ticketId}.`,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
@@ -194,18 +391,40 @@ export const Tickets = () => {
         try {
             await updateTicketComment(ticketId, commentId, currentUserId, text);
             setEditingCommentById({ ...editingCommentById, [commentId]: false });
+            addNotification({
+                title: 'Comment updated',
+                message: `Comment #${commentId} on ticket #${ticketId} was updated.`,
+                type: 'success',
+                module: 'tickets'
+            });
             fetchData();
         } catch (e) {
-            alert('Error updating comment.');
+            addNotification({
+                title: 'Comment update failed',
+                message: `Comment #${commentId} could not be updated.`,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
     const handleDeleteComment = async (ticketId, commentId) => {
         try {
             await deleteTicketComment(ticketId, commentId, currentUserId);
+            addNotification({
+                title: 'Comment deleted',
+                message: `Comment #${commentId} was removed from ticket #${ticketId}.`,
+                type: 'warning',
+                module: 'tickets'
+            });
             fetchData();
         } catch (e) {
-            alert('Error deleting comment.');
+            addNotification({
+                title: 'Comment deletion failed',
+                message: `Comment #${commentId} could not be removed.`,
+                type: 'error',
+                module: 'tickets'
+            });
         }
     };
 
@@ -220,22 +439,26 @@ export const Tickets = () => {
         }
     };
 
+    const visibleTickets = isStudentView
+        ? tickets.filter((ticket) => String(ticket.userId) === String(currentUserId))
+        : tickets;
+
     return (
         <div className="space-y-8">
-            <TicketOverview tickets={tickets} technicians={technicians} summary={summary} />
+            {!isStudentView && <TicketOverview tickets={tickets} technicians={technicians} summary={summary} />}
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Tickets Workspace</p>
-                    <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">Incident Ticketing</h1>
+                    <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
+                        {isStudentView ? 'Report Issues' : 'Incident Ticketing'}
+                    </h1>
                     <p className="mt-2 text-sm text-slate-400">
-                        Create maintenance requests, assign technicians, and keep each resolution documented.
+                        {isStudentView
+                            ? 'Report campus issues and track only the requests you have submitted.'
+                            : 'Create maintenance requests, assign technicians, and keep each resolution documented.'}
                     </p>
                 </div>
-                <Button onClick={() => setShowForm(!showForm)} className="gap-2 self-start lg:self-auto">
-                    {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    {showForm ? 'Cancel' : 'Report Issue'}
-                </Button>
             </div>
 
             {showForm && (
@@ -316,6 +539,16 @@ export const Tickets = () => {
             )}
 
             <div className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-card shadow-sm">
+                <div className="border-b border-gray-800 bg-gray-900/40 px-6 py-4">
+                    <h2 className="text-lg font-semibold text-white">
+                        {isStudentView ? 'My Issues' : 'All Issues'}
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-400">
+                        {isStudentView
+                            ? 'Review the tickets you reported and follow their progress.'
+                            : 'Review submitted incidents, coordinate assignments, and track resolution progress.'}
+                    </p>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-gray-400">
                         <thead className="border-b border-gray-800 bg-gray-900/50 text-gray-300">
@@ -334,7 +567,7 @@ export const Tickets = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-800">
-                            {tickets.map((t) => (
+                            {visibleTickets.map((t) => (
                                 <tr key={t.id} className="transition-colors hover:bg-gray-800/50">
                                     <td className="px-6 py-4 font-medium text-primary">TKT-{t.id}</td>
                                     <td className="px-6 py-4">
@@ -428,7 +661,7 @@ export const Tickets = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        {t.status === 'OPEN' && (
+                                        {isAdminView && t.status === 'OPEN' && (
                                             <>
                                                 <select
                                                     className="mr-2 h-8 rounded-md border border-gray-700 bg-gray-800/50 px-2 py-1 text-xs text-white"
@@ -445,15 +678,17 @@ export const Tickets = () => {
                                                 <Button variant="outline" size="sm" onClick={() => handleAssignTechnician(t.id)} className="mr-2">
                                                     Assign
                                                 </Button>
-                                                <Button variant="outline" size="sm" onClick={() => handleStatusChange(t.id, 'IN_PROGRESS')} className="mr-2">
-                                                    Start
-                                                </Button>
                                                 <Button variant="outline" size="sm" onClick={() => handleReject(t.id)}>
                                                     Reject
                                                 </Button>
                                             </>
                                         )}
-                                        {t.status === 'IN_PROGRESS' && (
+                                        {(isAdminView || isTechnicianView) && t.status === 'OPEN' && t.technicianId && (
+                                            <Button variant="outline" size="sm" onClick={() => handleStatusChange(t.id, 'IN_PROGRESS')} className="mr-2">
+                                                Start
+                                            </Button>
+                                        )}
+                                        {(isAdminView || isTechnicianView) && t.status === 'IN_PROGRESS' && (
                                             <>
                                                 <Input
                                                     placeholder='Add progress note (e.g., "Replaced HDMI cable and tested successfully")'
@@ -466,7 +701,7 @@ export const Tickets = () => {
                                                 </Button>
                                             </>
                                         )}
-                                        {t.status === 'RESOLVED' && (
+                                        {(isAdminView || isTechnicianView) && t.status === 'RESOLVED' && (
                                             <>
                                                 <Input
                                                     placeholder="Add final verification note"
@@ -482,7 +717,13 @@ export const Tickets = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {tickets.length === 0 && <tr><td colSpan="11" className="p-6 text-center text-gray-500">No tickets submitted.</td></tr>}
+                            {visibleTickets.length === 0 && (
+                                <tr>
+                                    <td colSpan="11" className="p-6 text-center text-gray-500">
+                                        {isStudentView ? 'You have not reported any issues yet.' : 'No tickets submitted.'}
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

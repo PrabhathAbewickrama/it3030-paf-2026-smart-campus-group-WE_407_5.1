@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../services/api';
+import { useNotifications } from '../../context/NotificationContext.jsx';
 import './AdminBookings.css';
 
 const initialFilters = {
@@ -13,6 +14,7 @@ const AdminBookings = () => {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [approval, setApproval] = useState({ status: 'APPROVED', adminReason: '' });
     const [filters, setFilters] = useState(initialFilters);
+    const { addNotification } = useNotifications();
 
     const fetchBookings = useCallback(async (activeFilters = filters) => {
         try {
@@ -36,11 +38,26 @@ const AdminBookings = () => {
     const handleApproveReject = async () => {
         try {
             await api.put(`/api/bookings/${selectedBooking.id}/approve`, approval);
+
+            addNotification({
+                title: approval.status === 'APPROVED' ? 'Booking approved' : 'Booking rejected',
+                message: approval.status === 'APPROVED'
+                    ? `Booking #${selectedBooking.id} was approved for ${selectedBooking.resource}.`
+                    : `Booking #${selectedBooking.id} was rejected${approval.adminReason ? `: ${approval.adminReason}` : '.'}`,
+                type: approval.status === 'APPROVED' ? 'success' : 'warning',
+                module: 'bookings',
+                roleScope: ['ADMIN', 'MANAGER', 'USER']
+            });
             setSelectedBooking(null);
             setApproval({ status: 'APPROVED', adminReason: '' });
             fetchBookings();
         } catch (error) {
-            alert('Error: ' + (error.response?.data || error.message));
+            addNotification({
+                title: 'Booking review failed',
+                message: String(error.response?.data || error.message),
+                type: 'error',
+                module: 'bookings'
+            });
         }
     };
 

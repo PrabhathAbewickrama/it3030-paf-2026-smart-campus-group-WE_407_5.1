@@ -8,6 +8,7 @@ import { LandingPage } from './pages/LandingPage';
 import { Tickets } from './pages/Tickets';
 import { Users } from './pages/Users';
 import { Settings } from './pages/Settings';
+import AssetsList from './pages/assets/AssetsList';
 import CreateBookingPage from './pages/CreateBookingPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -27,13 +28,19 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<DashboardLayout />}>
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/bookings" element={<BookingsHub />} />
-                        <Route path="/bookings/create" element={<CreateBookingPage />} />
-                        <Route path="/bookings/my" element={<MyBookingsPage />} />
-                        <Route path="/bookings/admin" element={<AdminDashboardPage />} />
-                        <Route path="/tickets" element={<Tickets />} />
-                        <Route path="/users" element={<Users />} />
-                        <Route path="/settings" element={<Settings />} />
+                        <Route element={<ProtectedRoute roles={['USER']} />}>
+                            <Route path="/bookings" element={<BookingsHub />} />
+                            <Route path="/bookings/create" element={<CreateBookingPage />} />
+                            <Route path="/bookings/my" element={<MyBookingsPage />} />
+                        </Route>
+                        <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+                            <Route path="/users" element={<Users />} />
+                            <Route path="/assets" element={<AssetsList />} />
+                            <Route path="/settings" element={<Settings />} />
+                        </Route>
+                        <Route element={<ProtectedRoute roles={['USER', 'ADMIN', 'TECHNICIAN']} />}>
+                            <Route path="/tickets" element={<Tickets />} />
+                        </Route>
                     </Route>
                 </Route>
 

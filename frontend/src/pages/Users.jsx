@@ -4,11 +4,10 @@ import { Badge } from '../components/common/Badge';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { getTickets, getUsers, getUserSummary } from '../services/api';
-import { Shield, UserCog, Users as UsersIcon, Wrench } from 'lucide-react';
+import { Shield, Users as UsersIcon, Wrench } from 'lucide-react';
 
 const ROLE_META = {
     ADMIN: { label: 'Admins', icon: Shield, accent: 'text-red-400' },
-    MANAGER: { label: 'Managers', icon: UserCog, accent: 'text-blue-400' },
     TECHNICIAN: { label: 'Technicians', icon: Wrench, accent: 'text-emerald-400' },
     USER: { label: 'Students', icon: UsersIcon, accent: 'text-violet-400' }
 };
@@ -92,8 +91,8 @@ export const Users = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard title="Total Accounts" value={summary?.totalUsers ?? users.length} icon={UsersIcon} color="text-primary" />
                 <SummaryCard title="Technicians" value={summary?.technicians ?? users.filter((user) => user.role === 'TECHNICIAN').length} icon={Wrench} color="text-emerald-400" />
-                <SummaryCard title="Managers" value={summary?.managers ?? users.filter((user) => user.role === 'MANAGER').length} icon={UserCog} color="text-blue-400" />
                 <SummaryCard title="Admins" value={summary?.admins ?? users.filter((user) => user.role === 'ADMIN').length} icon={Shield} color="text-red-400" />
+                <SummaryCard title="Students" value={summary?.students ?? users.filter((user) => user.role === 'USER').length} icon={UsersIcon} color="text-violet-400" />
             </div>
 
             <Card className="border border-gray-800/80">
@@ -111,7 +110,6 @@ export const Users = () => {
                         >
                             <option value="ALL">All roles</option>
                             <option value="ADMIN">Admins</option>
-                            <option value="MANAGER">Managers</option>
                             <option value="TECHNICIAN">Technicians</option>
                             <option value="USER">Students</option>
                         </select>
@@ -156,7 +154,7 @@ export const Users = () => {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <Badge variant={user.role === 'TECHNICIAN' ? 'success' : user.role === 'ADMIN' ? 'danger' : user.role === 'MANAGER' ? 'default' : 'neutral'}>
+                                                <Badge variant={user.role === 'TECHNICIAN' ? 'success' : user.role === 'ADMIN' ? 'danger' : 'neutral'}>
                                                     {user.role}
                                                 </Badge>
                                             </td>

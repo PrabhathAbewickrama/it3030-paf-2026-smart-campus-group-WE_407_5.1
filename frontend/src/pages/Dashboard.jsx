@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 export const Dashboard = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const role = user?.role?.replace('ROLE_', '') || 'USER';
     const [tickets, setTickets] = useState([]);
     const [summary, setSummary] = useState(null);
 
@@ -53,48 +54,105 @@ export const Dashboard = () => {
         return {
             activeTickets,
             resolvedToday,
-            users: (summary?.students ?? 0) + (summary?.admins ?? 0) + (summary?.managers ?? 0)
+            users: (summary?.students ?? 0) + (summary?.admins ?? 0) + (summary?.technicians ?? 0)
         };
     }, [summary, tickets]);
 
-    const quickActions = [
-        {
-            title: 'Open Ticket Center',
-            description: 'Review incidents, priorities, and recent maintenance activity.',
-            icon: Wrench,
-            action: () => navigate('/tickets'),
-            buttonLabel: 'Go to Tickets'
-        },
-        {
-            title: 'Manage Bookings',
-            description: 'Create requests, review schedules, and handle room availability.',
-            icon: CalendarClock,
-            action: () => navigate('/bookings'),
-            buttonLabel: 'Open Bookings'
-        },
-        {
-            title: 'System Administration',
-            description: 'View users, roles, and the operational settings for the campus platform.',
-            icon: ShieldCheck,
-            action: () => navigate('/users'),
-            buttonLabel: 'View Users'
-        }
-    ];
+    const quickActions = role === 'ADMIN'
+        ? [
+            {
+                title: 'Booking Approvals',
+                description: 'Review and decide on booking requests across the campus.',
+                icon: CalendarClock,
+                action: () => navigate('/bookings/admin'),
+                buttonLabel: 'Review Bookings'
+            },
+            {
+                title: 'Manage Tickets',
+                description: 'Monitor campus incidents and support workload.',
+                icon: Wrench,
+                action: () => navigate('/tickets'),
+                buttonLabel: 'Open Tickets'
+            },
+            {
+                title: 'Manage Users',
+                description: 'View students, admins, and technicians in one place.',
+                icon: ShieldCheck,
+                action: () => navigate('/users'),
+                buttonLabel: 'Open Users'
+            }
+        ]
+        : role === 'TECHNICIAN'
+            ? [
+                {
+                    title: 'Assigned Tickets',
+                    description: 'Focus on maintenance tasks, progress updates, and closure.',
+                    icon: Wrench,
+                    action: () => navigate('/tickets'),
+                    buttonLabel: 'Open Technician Queue'
+                }
+            ]
+            : [
+                {
+                    title: 'My Bookings',
+                    description: 'Create resource bookings and track their status.',
+                    icon: CalendarClock,
+                    action: () => navigate('/bookings'),
+                    buttonLabel: 'Open Bookings'
+                },
+                {
+                    title: 'My Tickets',
+                    description: 'Report incidents and follow maintenance updates.',
+                    icon: Wrench,
+                    action: () => navigate('/tickets'),
+                    buttonLabel: 'Go to Tickets'
+                }
+            ];
 
-    const capabilities = [
-        {
-            title: 'Smart Maintenance Flow',
-            description: 'Prioritize issues, assign technicians, and keep every resolution update visible to the right people.'
-        },
-        {
-            title: 'Campus Space Coordination',
-            description: 'Handle bookings, approvals, and schedules without bouncing between disconnected tools.'
-        },
-        {
-            title: 'Role-Based Control',
-            description: 'Students, managers, technicians, and admins each get a focused view of the work that matters to them.'
-        }
-    ];
+    const capabilities = role === 'ADMIN'
+        ? [
+            {
+                title: 'Administrative Oversight',
+                description: 'Keep booking approvals, users, and campus operations under control.'
+            },
+            {
+                title: 'Support Visibility',
+                description: 'Track incident progress and technician activity without opening every module first.'
+            },
+            {
+                title: 'Role-Based Access',
+                description: 'Admin tools stay available only where they are actually needed.'
+            }
+        ]
+        : role === 'TECHNICIAN'
+            ? [
+                {
+                    title: 'Maintenance Queue',
+                    description: 'See active incidents and move them toward resolution faster.'
+                },
+                {
+                    title: 'Work Updates',
+                    description: 'Add notes, progress updates, and closing actions from one focused space.'
+                },
+                {
+                    title: 'Technician-Only View',
+                    description: 'No admin or user-management pages clutter the support workflow.'
+                }
+            ]
+            : [
+                {
+                    title: 'Student Booking Flow',
+                    description: 'Request rooms and resources without seeing admin-only controls.'
+                },
+                {
+                    title: 'Support Requests',
+                    description: 'Create incident tickets and follow updates from the same dashboard.'
+                },
+                {
+                    title: 'Clean Student Experience',
+                    description: 'Students only see the parts of the system they actually need.'
+                }
+            ];
 
     return (
         <div className="space-y-8">
@@ -104,22 +162,42 @@ export const Dashboard = () => {
                     <div>
                         <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
                             <Sparkles className="h-3.5 w-3.5" />
-                            Smart Campus System
+                            {role === 'ADMIN' ? 'Admin Workspace' : role === 'TECHNICIAN' ? 'Technician Workspace' : 'Student Workspace'}
                         </div>
                         <h1 className="mt-5 max-w-3xl text-4xl font-bold tracking-tight text-white md:text-5xl">
                             Welcome back, {user?.name?.split(' ')[0] || 'Team'}.
-                            <span className="block text-cyan-300">Run campus operations from one focused workspace.</span>
+                            <span className="block text-cyan-300">
+                                {role === 'ADMIN'
+                                    ? 'Oversee bookings, users, and support operations.'
+                                    : role === 'TECHNICIAN'
+                                        ? 'Handle maintenance work from a focused support dashboard.'
+                                        : 'Access bookings and support from a student-focused dashboard.'}
+                            </span>
                         </h1>
                         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-                            SLIIT Nexus brings together maintenance support, space coordination, and operational oversight so the whole campus can move faster with less confusion.
+                            {role === 'ADMIN'
+                                ? 'This dashboard is designed for operational control, approvals, and user oversight.'
+                                : role === 'TECHNICIAN'
+                                    ? 'This dashboard keeps your daily work centered on incidents, repairs, and updates.'
+                                    : 'This dashboard keeps student tasks simple by focusing on bookings and ticket help.'}
                         </p>
                         <div className="mt-8 flex flex-wrap gap-4">
-                            <Button onClick={() => navigate('/tickets')} className="gap-2 bg-cyan-500 text-slate-950 hover:bg-cyan-400 hover:shadow-[0_0_25px_rgba(34,211,238,0.45)]">
-                                Open Ticket Center <ArrowRight className="h-4 w-4" />
+                            <Button
+                                onClick={() => navigate(role === 'ADMIN' ? '/tickets' : role === 'TECHNICIAN' ? '/tickets' : '/bookings')}
+                                className="gap-2 bg-cyan-500 text-slate-950 hover:bg-cyan-400 hover:shadow-[0_0_25px_rgba(34,211,238,0.45)]"
+                            >
+                                {role === 'ADMIN' ? 'Open Ticket Center' : role === 'TECHNICIAN' ? 'Open Technician Queue' : 'Open Bookings'}
+                                <ArrowRight className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" onClick={() => navigate('/bookings')} className="border-cyan-300/40 text-cyan-200 hover:bg-cyan-400/10">
-                                Explore Bookings
-                            </Button>
+                            {role !== 'TECHNICIAN' && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => navigate(role === 'ADMIN' ? '/users' : '/tickets')}
+                                    className="border-cyan-300/40 text-cyan-200 hover:bg-cyan-400/10"
+                                >
+                                    {role === 'ADMIN' ? 'Open Users' : 'Open Tickets'}
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -128,8 +206,8 @@ export const Dashboard = () => {
                         <div className="mt-6 space-y-4">
                             <SnapshotRow label="Active maintenance tickets" value={overview.activeTickets} accent="text-cyan-300" />
                             <SnapshotRow label="Resolved today" value={overview.resolvedToday} accent="text-emerald-300" />
-                            <SnapshotRow label="Registered operations users" value={overview.users} accent="text-amber-300" />
-                            <SnapshotRow label="Admins and managers" value={(summary?.admins ?? 0) + (summary?.managers ?? 0)} accent="text-fuchsia-300" />
+                            <SnapshotRow label="Registered system users" value={overview.users} accent="text-amber-300" />
+                            <SnapshotRow label="Admins and technicians" value={(summary?.admins ?? 0) + (summary?.technicians ?? 0)} accent="text-fuchsia-300" />
                         </div>
                     </Card>
                 </div>
@@ -143,7 +221,9 @@ export const Dashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">System Home</p>
-                            <h2 className="mt-1 text-2xl font-bold text-white">Everything important, without the noise</h2>
+                            <h2 className="mt-1 text-2xl font-bold text-white">
+                                {role === 'ADMIN' ? 'Administrative control, without the noise' : role === 'TECHNICIAN' ? 'Maintenance work, without the noise' : 'Student essentials, without the noise'}
+                            </h2>
                         </div>
                     </div>
                     <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -195,9 +275,13 @@ export const Dashboard = () => {
                             <Wrench className="h-6 w-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-white">Ticket analytics now live in the Tickets module</h3>
+                            <h3 className="text-xl font-semibold text-white">
+                                {role === 'TECHNICIAN' ? 'Support work stays front and center' : 'Tickets stay close when support is needed'}
+                            </h3>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
-                                The dashboard overview belongs to maintenance operations, so it now sits inside the ticket workspace where the team can act on it immediately.
+                                {role === 'TECHNICIAN'
+                                    ? 'Technicians get a direct path into the ticket queue and maintenance progress updates.'
+                                    : 'The ticket module is ready whenever you need deeper maintenance actions or issue tracking.'}
                             </p>
                         </div>
                     </div>
@@ -209,9 +293,13 @@ export const Dashboard = () => {
                             <ClipboardList className="h-6 w-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-semibold text-white">Designed for daily use</h3>
+                            <h3 className="text-xl font-semibold text-white">Designed for daily role-based use</h3>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
-                                This home page is meant to orient users quickly, point them to the right module, and give a cleaner first impression of the full system.
+                                {role === 'ADMIN'
+                                    ? 'Admins see control tools only.'
+                                    : role === 'TECHNICIAN'
+                                        ? 'Technicians see support tools only.'
+                                        : 'Students see booking and help tools only.'}
                             </p>
                         </div>
                     </div>
