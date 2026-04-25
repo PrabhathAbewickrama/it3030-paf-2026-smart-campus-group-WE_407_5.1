@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { Bell, LogOut, Menu, Search, UserCircle } from 'lucide-react';
 
 export const Navbar = () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/utils';
 
-export const Button = React.forwardRef(({ className, variant = 'primary', size = 'default', ...props }, ref) => {
+export const Button = React.forwardRef(({ asChild = false, className, variant = 'primary', size = 'default', ...props }, ref) => {
     const baseStyles = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none";
 
     const variants = {
@@ -18,6 +18,12 @@ export const Button = React.forwardRef(({ className, variant = 'primary', size =
         lg: "h-11 px-8 rounded-md text-base",
         icon: "h-10 w-10",
     };
+
+    if (asChild && React.isValidElement(props.children)) {
+        return React.cloneElement(props.children, {
+            className: cn(baseStyles, variants[variant], sizes[size], props.children.props.className, className),
+        });
+    }
 
     return (
         <button

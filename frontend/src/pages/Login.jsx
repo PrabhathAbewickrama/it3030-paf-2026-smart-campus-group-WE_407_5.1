@@ -3,14 +3,24 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export const Login = () => {
     const navigate = useNavigate();
+    const { loginWithProfile } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleLogin = (e) => {
         e.preventDefault();
+        const isAdmin = (email || '').toLowerCase().includes('admin');
+        loginWithProfile({
+            id: isAdmin ? 1 : 2,
+            name: isAdmin ? 'Campus Admin' : 'Campus User',
+            username: email || (isAdmin ? 'admin@sliit.lk' : 'user@sliit.lk'),
+            email: email || (isAdmin ? 'admin@sliit.lk' : 'user@sliit.lk'),
+            role: isAdmin ? 'ADMIN' : 'USER'
+        });
         navigate('/dashboard');
     };
 
