@@ -1,11 +1,22 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Wrench, Settings, Users } from 'lucide-react';
+import { CalendarRange, ClipboardList, LayoutDashboard, Settings, ShieldCheck, Users, Wrench } from 'lucide-react';
 import { cn } from '../../utils/utils';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export const Sidebar = () => {
+    const { user } = useAuth();
+    const role = user?.role?.replace('ROLE_', '') || 'USER';
+
     const links = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Bookings', path: '/bookings', icon: CalendarRange },
+        ...(role !== 'ADMIN' ? [
+            { name: 'Create Booking', path: '/bookings/create', icon: CalendarRange },
+            { name: 'My Bookings', path: '/bookings/my', icon: ClipboardList },
+        ] : [
+            { name: 'Booking Approvals', path: '/bookings/admin', icon: ShieldCheck },
+        ]),
         { name: 'Tickets', path: '/tickets', icon: Wrench },
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Settings', path: '/settings', icon: Settings },

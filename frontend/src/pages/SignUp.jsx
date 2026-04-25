@@ -3,13 +3,22 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export const SignUp = () => {
     const navigate = useNavigate();
+    const { loginWithProfile } = useAuth();
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
 
     const handleSignUp = (e) => {
         e.preventDefault();
+        loginWithProfile({
+            id: Date.now(),
+            name: formData.name,
+            username: formData.email,
+            email: formData.email,
+            role: 'USER'
+        });
         navigate('/dashboard');
     };
 

@@ -4,7 +4,7 @@ import { Button } from '../components/common/Button';
 import { Plus, X } from 'lucide-react';
 import { Badge } from '../components/common/Badge';
 import { Input } from '../components/common/Input';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.jsx';
 import {
     getTickets,
     getTechnicians,
@@ -43,22 +43,44 @@ export const Tickets = () => {
     });
 
     const fetchData = async () => {
+        let ticketsData = [];
+
         try {
             const resTick = await getTickets();
             setTickets(resTick.data);
+            ticketsData = resTick.data;
+        } catch (e) {
+            console.error(e);
+            return;
+        }
+
+        try {
+            const resTech = await getTechnicians();
+            setTechnicians(resTech.data);
+        } catch (e) {
+            console.error('Failed to load technicians', e);
+            setTechnicians([]);
+        }
+
+        try {
+            const resRes = await getResources();
+            setResources(resRes.data);
+        } catch (e) {
+            console.error('Failed to load resources', e);
+            setResources([]);
+        }
+
+        try {
             const commentPairs = await Promise.all(
-                resTick.data.map(async (ticket) => {
+                ticketsData.map(async (ticket) => {
                     const commentRes = await getTicketComments(ticket.id);
                     return [ticket.id, commentRes.data];
                 })
             );
             setCommentsByTicket(Object.fromEntries(commentPairs));
-            const resTech = await getTechnicians();
-            setTechnicians(resTech.data);
-            const resRes = await getResources();
-            setResources(resRes.data);
         } catch (e) {
-            console.error(e);
+            console.error('Failed to load ticket comments', e);
+            setCommentsByTicket({});
         }
     };
 

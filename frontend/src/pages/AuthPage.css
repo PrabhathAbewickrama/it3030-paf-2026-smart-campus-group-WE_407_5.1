@@ -122,6 +122,33 @@
   text-decoration: none;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+#google-signin-button {
+  margin: 16px 0;
+}
+
+#google-signin-button > div {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 @media (max-width: 600px) {
   .auth-card {
     padding: 24px;
