@@ -1,0 +1,70 @@
+# ========================
+# FRONTEND (React / Vite)
+# ========================
+node_modules/
+dist/
+build/
+
+# ========================
+# BACKEND (Spring Boot / Gradle)
+# ========================
+target/
+.gradle
+.m2/
+*.class
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ========================
+# ENVIRONMENT VARIABLES
+# ========================
+.env
+application.properties
+application-local.properties
+
+# ========================
+# LOG FILES
+# ========================
+*.log
+
+# ========================
+# IDE FILES
+# ========================
+.vscode/
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# ========================
+# SPRING / STS
+# ========================
+HELP.md
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# ========================
+# NETBEANS
+# ========================
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# ========================
+# OS FILES
+# ========================
+.DS_Store
+Thumbs.db

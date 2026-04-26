@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 7%;
+    --text: 220 25% 92%;
+    --card: 225 37% 11%;
+    --primary: 263 83% 58%;
+    --secondary: 330 81% 60%;
+    --accent: 199 89% 55%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background:
+      radial-gradient(circle at top left, rgba(124, 58, 237, 0.2), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(236, 72, 153, 0.18), transparent 28%),
+      linear-gradient(180deg, #060816 0%, #0b1120 100%);
+    color: hsl(var(--text));
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.82) 0%, rgba(15, 23, 42, 0.74) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(18px);
+    border-radius: 1.5rem;
+  }
+
+  .neon-text {
+    color: #f8fafc;
+    text-shadow:
+      0 0 12px rgba(124, 58, 237, 0.35),
+      0 0 24px rgba(56, 189, 248, 0.18);
+  }
+}
